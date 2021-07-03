@@ -194,7 +194,7 @@ public class DqlApp {
 		"  #[AND S.STAFF_ID = :staffId]\r\n" + 
 		"  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
         // Use namedScript to do something
-	System.out.println(namedScript.getScript());
+        System.out.println(namedScript.getScript());
     }
         
 }
