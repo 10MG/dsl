@@ -42,14 +42,14 @@ public abstract class MacroUtils {
 		}
 	}
 
-	public static final StringBuilder execute(StringBuilder dsql, Map<String, Object> context,
+	public static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
 			Map<String, Object> params, boolean returnEmptyWhenNoMacro) {
-		int len = dsql.length(), i = 0;
+		int len = dsl.length(), i = 0;
 		char a = ' ', b = ' ';
 		StringBuilder macroName = new StringBuilder(), paramName = null;
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		while (i < len) {
-			char c = dsql.charAt(i);
+			char c = dsl.charAt(i);
 			if (c == MACRO_LOGIC_START) {// 宏逻辑开始
 				if (macroName.length() > 0) {
 					Macro macro = MACROS.get(macroName.toString());
@@ -57,7 +57,7 @@ public abstract class MacroUtils {
 						if (returnEmptyWhenNoMacro) {
 							return new StringBuilder();
 						}
-						return dsql;
+						return dsl;
 					} else {
 						StringBuilder logic = new StringBuilder();
 						boolean isString = false;// 是否在字符串区域
@@ -66,7 +66,7 @@ public abstract class MacroUtils {
 						while (++i < len) {
 							a = b;
 							b = c;
-							c = dsql.charAt(i);
+							c = dsl.charAt(i);
 							if (isString) {
 								if (DSLUtils.isStringEnd(a, b, c)) {// 字符串区域结束
 									isString = false;
@@ -76,9 +76,9 @@ public abstract class MacroUtils {
 								if (c == MACRO_LOGIC_END) {// 宏逻辑结束
 									if (deep == 0) {
 										if (logic.length() > 0) {
-											return execute(dsql, context, usedParams, macro, logic.toString(), i);// 当前字符为括号，当前位置即为宏名称及逻辑结束的位置
+											return execute(dsl, context, usedParams, macro, logic.toString(), i);// 当前字符为括号，当前位置即为宏名称及逻辑结束的位置
 										} else {
-											return dsql;
+											return dsl;
 										}
 									} else {
 										logic.append(c);
@@ -111,12 +111,12 @@ public abstract class MacroUtils {
 							}
 						}
 					}
-					return dsql;
+					return dsl;
 				} else {
 					if (returnEmptyWhenNoMacro) {
 						return new StringBuilder();
 					}
-					return dsql;
+					return dsl;
 				}
 			} else if (c <= BLANK_SPACE) {
 				if (macroName.length() > 0) {
@@ -125,15 +125,15 @@ public abstract class MacroUtils {
 						if (returnEmptyWhenNoMacro) {
 							return new StringBuilder();
 						}
-						return dsql;
+						return dsl;
 					} else {
-						return execute(dsql, context, usedParams, macro, null, i - 1);// 当前字符为空白字符，则宏名称结束应该在前一个位置
+						return execute(dsl, context, usedParams, macro, null, i - 1);// 当前字符为空白字符，则宏名称结束应该在前一个位置
 					}
 				} else {
 					if (returnEmptyWhenNoMacro) {
 						return new StringBuilder();
 					}
-					return dsql;
+					return dsl;
 				}
 			} else {
 				macroName.append(c);
@@ -142,29 +142,29 @@ public abstract class MacroUtils {
 			b = c;
 			i++;
 		}
-		return dsql;
+		return dsl;
 	}
 
-	private static final StringBuilder execute(StringBuilder dsql, Map<String, Object> context,
+	private static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
 			Map<String, Object> params, Macro macro, String logic, int macroEndIndex) {
 		Object result = null;
 		try {
 			result = macro.excute(logic, context, params);
 		} catch (ScriptException e) {
-			return dsql;
+			return dsl;
 		}
 		if (result == null) {
-			return dsql;
+			return dsl;
 		} else {
 			if (result instanceof Boolean) {
 				if (((Boolean) result).booleanValue()) {
-					dsql.delete(0, macroEndIndex + 1);
-					return dsql;
+					dsl.delete(0, macroEndIndex + 1);
+					return dsl;
 				} else {
 					return new StringBuilder();
 				}
 			} else {
-				return new StringBuilder(result.toString()).append(dsql.delete(0, macroEndIndex + 1));
+				return new StringBuilder(result.toString()).append(dsl.delete(0, macroEndIndex + 1));
 			}
 		}
 	}
