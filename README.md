@@ -186,13 +186,13 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 public class DqlApp {
     public static void main(String[] args) {
         NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + 
-		"  *\r\n" + 
-		"FROM STAFF_INFO S\r\n" + 
-		"WHERE #[if(:curDepartmentId == '01') 1=1]\r\n" + 
-		"  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n" + 
-		"  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n" + 
-		"  #[AND S.STAFF_ID = :staffId]\r\n" + 
-		"  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
+		    "  *\r\n" + 
+		    "FROM STAFF_INFO S\r\n" + 
+		    "WHERE #[if(:curDepartmentId == '01') 1=1]\r\n" + 
+		    "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n" + 
+		    "  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n" + 
+		    "  #[AND S.STAFF_ID = :staffId]\r\n" + 
+		    "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
         // Use namedScript to do something
         System.out.println(namedScript.getScript());
     }
