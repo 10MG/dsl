@@ -184,6 +184,7 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 
 ```
 public class DqlApp {
+
     public static void main(String[] args) {
         NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + 
 		    "  *\r\n" + 
@@ -196,7 +197,7 @@ public class DqlApp {
         // Use namedScript to do something
         System.out.println(namedScript.getScript());
     }
-        
+
 }
 ```
 
