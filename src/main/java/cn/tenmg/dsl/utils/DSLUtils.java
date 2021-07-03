@@ -15,7 +15,9 @@ import cn.tenmg.dsl.NamedScript;
  */
 public abstract class DSLUtils {
 
-	private static final char SINGLE_QUOTATION_MARK = '\'', BLANK_SPACE = '\u0020', PARAM_BEGIN = ':';
+	public static final char BLANK_SPACE = '\u0020';
+
+	private static final char SINGLE_QUOTATION_MARK = '\'', PARAM_BEGIN = ':';
 
 	private static final String LINE_SPLITOR = "\r\n", EMPTY_CHARS = LINE_SPLITOR.concat("\t ");
 

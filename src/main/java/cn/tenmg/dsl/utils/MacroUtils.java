@@ -17,17 +17,17 @@ import cn.tenmg.dsl.Macro;
  */
 public abstract class MacroUtils {
 
-	private static final char BLANK_SPACE = '\u0020';
+	private static final char
 
 	/**
 	 * 宏逻辑开始
 	 */
-	private static final char MACRO_LOGIC_START = '(';
+	MACRO_LOGIC_START = '(',
 
-	/**
-	 * 宏逻辑结束
-	 */
-	private static final char MACRO_LOGIC_END = ')';
+			/**
+			 * 宏逻辑结束
+			 */
+			MACRO_LOGIC_END = ')';
 
 	/**
 	 * 宏
@@ -118,7 +118,7 @@ public abstract class MacroUtils {
 					}
 					return dsl;
 				}
-			} else if (c <= BLANK_SPACE) {
+			} else if (c <= DSLUtils.BLANK_SPACE) {
 				if (macroName.length() > 0) {
 					Macro macro = MACROS.get(macroName.toString());
 					if (macro == null) {// 找不到对应的宏
