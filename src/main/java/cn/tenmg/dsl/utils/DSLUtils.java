@@ -15,7 +15,7 @@ import cn.tenmg.dsl.NamedScript;
  */
 public abstract class DSLUtils {
 
-	public static final char BLANK_SPACE = '\u0020';
+	public static final char BACKSLASH = '\\', BLANK_SPACE = '\u0020';
 
 	private static final char SINGLE_QUOTATION_MARK = '\'', PARAM_BEGIN = ':';
 
@@ -43,7 +43,7 @@ public abstract class DSLUtils {
 		if (len < 3) {// 长度小于最小动态脚本单元 “#[]”的长度直接返回
 			return new NamedScript(dsl, params);
 		}
-		int i = 0, deep = 0;
+		int i = 0, deep = 0, /* 连续反斜杠数 */ backslashes = 0;
 		char a = BLANK_SPACE, b = BLANK_SPACE, c;
 		boolean isString = false;// 是否在字符串区域
 		boolean isDynamic = false;// 是否在动态脚本区域
@@ -57,8 +57,13 @@ public abstract class DSLUtils {
 		while (i < len) {
 			c = dsl.charAt(i);
 			if (isString) {
-				if (isStringEnd(a, b, c)) {// 字符串区域结束
-					isString = false;
+				if (c == BACKSLASH) {
+					backslashes++;
+				} else {
+					if (isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+						isString = false;
+					}
+					backslashes = 0;
 				}
 				if (deep > 0) {
 					dslMap.get(deep).append(c);
@@ -163,6 +168,7 @@ public abstract class DSLUtils {
 						isDynamic = true;
 						script.deleteCharAt(script.length() - 1);
 						deep++;
+						dslMap.put(deep, new StringBuilder());
 						validMap.put(deep, new HashSet<String>());
 					} else {
 						if (isParam) {// 处于参数区域
@@ -247,7 +253,8 @@ public abstract class DSLUtils {
 	}
 
 	/**
-	 * 根据指定的三个前后相邻字符a、b和c，判断其是否为动态脚本字符串区的结束位置
+	 * 
+	 * 根据指定的三个前后相邻字符a、b和c及当前字符c之前的连续反斜杠数量，判断其是否为动态脚本字符串区的结束位置
 	 * 
 	 * @param a
 	 *            前第二个字符a
@@ -255,11 +262,20 @@ public abstract class DSLUtils {
 	 *            前一个字符b
 	 * @param c
 	 *            当前字符c
+	 * @param backslashes
+	 *            当前字符c之前的连续反斜杠数量
 	 * @return 是动态脚本字符串区域结束位置返回true，否则返回false
 	 */
-	public static boolean isStringEnd(char a, char b, char c) {
-		return (a == SINGLE_QUOTATION_MARK || (a != SINGLE_QUOTATION_MARK && b != SINGLE_QUOTATION_MARK))
-				&& c == SINGLE_QUOTATION_MARK;
+	public static boolean isStringEnd(char a, char b, char c, int backslashes) {
+		if (c == SINGLE_QUOTATION_MARK) {
+			if (b == BACKSLASH) {
+				return backslashes % 2 == 0;
+			} else {
+				return true;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**

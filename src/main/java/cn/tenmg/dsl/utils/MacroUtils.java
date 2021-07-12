@@ -44,8 +44,8 @@ public abstract class MacroUtils {
 
 	public static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
 			Map<String, Object> params, boolean returnEmptyWhenNoMacro) {
-		int len = dsl.length(), i = 0;
-		char a = ' ', b = ' ';
+		int len = dsl.length(), i = 0, backslashes = 0;
+		char a = DSLUtils.BLANK_SPACE, b = DSLUtils.BLANK_SPACE;
 		StringBuilder macroName = new StringBuilder(), paramName = null;
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		while (i < len) {
@@ -68,8 +68,13 @@ public abstract class MacroUtils {
 							b = c;
 							c = dsl.charAt(i);
 							if (isString) {
-								if (DSLUtils.isStringEnd(a, b, c)) {// 字符串区域结束
-									isString = false;
+								if (c == DSLUtils.BACKSLASH) {
+									backslashes++;
+								} else {
+									if (DSLUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+										isString = false;
+									}
+									backslashes = 0;
 								}
 								logic.append(c);
 							} else {
