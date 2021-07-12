@@ -180,7 +180,7 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 </dependency>
 ```
 
-调用DSLUtils.parse方法，传入解析动态脚本和参数解析
+调用DSLUtils.parse方法，传入动态脚本和参数执行解析
 
 ```
 public class DslApp {
