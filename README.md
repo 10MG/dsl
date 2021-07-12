@@ -183,7 +183,7 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 调用DSLUtils.parse方法，传入解析动态脚本和参数解析
 
 ```
-public class DqlApp {
+public class DslApp {
 
     public static void main(String[] args) {
         NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + 
