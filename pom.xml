@@ -42,7 +42,7 @@
 
 	<scm>
 		<connection>scm:git:https://gitee.com/tenmg/dsl.git</connection>
-		<url>https://gitee.com/tenmg/dsl.git</url>
+		<url>https://gitee.com/tenmg/dsl</url>
 		<developerConnection>scm:git:https://gitee.com/tenmg</developerConnection>
 	</scm>
 
