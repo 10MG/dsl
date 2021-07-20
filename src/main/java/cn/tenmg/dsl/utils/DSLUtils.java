@@ -60,7 +60,7 @@ public abstract class DSLUtils {
 				if (c == BACKSLASH) {
 					backslashes++;
 				} else {
-					if (isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+					if (NamedScriptUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
 						isString = false;
 					}
 					backslashes = 0;
@@ -106,7 +106,7 @@ public abstract class DSLUtils {
 						}
 					} else {
 						if (isParam) {// 处于动态参数区域
-							if (isParamChar(c)) {
+							if (NamedScriptUtils.isParamChar(c)) {
 								paramName.append(c);
 								StringBuilder dslBuilder = dslMap.get(deep);
 								if (dslBuilder == null) {
@@ -148,7 +148,7 @@ public abstract class DSLUtils {
 								dslMap.put(deep, new StringBuilder());
 								validMap.put(deep, new HashSet<String>());
 							} else {
-								if (isParamBegin(b, c)) {
+								if (NamedScriptUtils.isParamBegin(b, c)) {
 									isParam = true;
 									paramName.setLength(0);
 									paramName.append(c);
@@ -172,7 +172,7 @@ public abstract class DSLUtils {
 						validMap.put(deep, new HashSet<String>());
 					} else {
 						if (isParam) {// 处于参数区域
-							if (isParamChar(c)) {
+							if (NamedScriptUtils.isParamChar(c)) {
 								paramName.append(c);
 								if (i == len - 1) {
 									String name = paramName.toString();
@@ -187,7 +187,7 @@ public abstract class DSLUtils {
 								}
 							}
 						} else {// 未处于参数区域
-							if (isParamBegin(b, c)) {
+							if (NamedScriptUtils.isParamBegin(b, c)) {
 								isParam = true;
 								paramName.setLength(0);
 								paramName.append(c);
@@ -226,56 +226,6 @@ public abstract class DSLUtils {
 			}
 		}
 		return parse(dsl, paramsMap);
-	}
-
-	/**
-	 * 根据指定的两个前后相邻字符b和c，判断其是否为动态脚本参数的开始位置
-	 * 
-	 * @param b
-	 *            前一个字符
-	 * @param c
-	 *            当前字符
-	 * @return 如果字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
-	 */
-	public static boolean isParamBegin(char b, char c) {
-		return b == PARAM_BEGIN && is26LettersIgnoreCase(c);
-	}
-
-	/**
-	 * 根据指定的字符c，判断是否是参数字符（即大小写字母、数字、下划线、短横线）
-	 * 
-	 * @param c
-	 *            指定字符
-	 * @return 如果字符c为26个字母（大小写均可）、“0-9”、“_”或者“-”，返回true，否则返回false
-	 */
-	public static boolean isParamChar(char c) {
-		return is26LettersIgnoreCase(c) || (c >= '0' && c <= '9') || c == '_' || c == '-';
-	}
-
-	/**
-	 * 
-	 * 根据指定的三个前后相邻字符a、b和c及当前字符c之前的连续反斜杠数量，判断其是否为动态脚本字符串区的结束位置
-	 * 
-	 * @param a
-	 *            前第二个字符a
-	 * @param b
-	 *            前一个字符b
-	 * @param c
-	 *            当前字符c
-	 * @param backslashes
-	 *            当前字符c之前的连续反斜杠数量
-	 * @return 是动态脚本字符串区域结束位置返回true，否则返回false
-	 */
-	public static boolean isStringEnd(char a, char b, char c, int backslashes) {
-		if (c == SINGLE_QUOTATION_MARK) {
-			if (b == BACKSLASH) {
-				return backslashes % 2 == 0;
-			} else {
-				return true;
-			}
-		} else {
-			return false;
-		}
 	}
 
 	/**
@@ -364,17 +314,6 @@ public abstract class DSLUtils {
 				break;
 			}
 		}
-	}
-
-	/**
-	 * 根据指定的字符c，判断是否是26个字母（大小写均可）
-	 * 
-	 * @param c
-	 *            指定字符
-	 * @return 是26个字母返回true，否则返回false
-	 */
-	private static boolean is26LettersIgnoreCase(char c) {
-		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 	}
 
 }

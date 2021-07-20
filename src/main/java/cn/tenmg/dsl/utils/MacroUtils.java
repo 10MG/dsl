@@ -71,7 +71,7 @@ public abstract class MacroUtils {
 								if (c == DSLUtils.BACKSLASH) {
 									backslashes++;
 								} else {
-									if (DSLUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+									if (NamedScriptUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
 										isString = false;
 									}
 									backslashes = 0;
@@ -94,7 +94,7 @@ public abstract class MacroUtils {
 									deep++;
 								} else {
 									if (isParam) {
-										if (DSLUtils.isParamChar(c)) {
+										if (NamedScriptUtils.isParamChar(c)) {
 											paramName.append(c);
 										} else {
 											isParam = false;
@@ -103,7 +103,7 @@ public abstract class MacroUtils {
 										}
 										logic.append(c);
 									} else {
-										if (DSLUtils.isParamBegin(b, c)) {
+										if (NamedScriptUtils.isParamBegin(b, c)) {
 											isParam = true;
 											paramName = new StringBuilder();
 											paramName.append(c);
