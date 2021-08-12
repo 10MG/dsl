@@ -148,7 +148,7 @@ public abstract class DSLUtils {
 								dslMap.put(deep, new StringBuilder());
 								validMap.put(deep, new HashSet<String>());
 							} else {
-								if (NamedScriptUtils.isParamBegin(b, c)) {
+								if (NamedScriptUtils.isParamBegin(a, b, c)) {
 									isParam = true;
 									paramName.setLength(0);
 									paramName.append(c);
@@ -187,7 +187,7 @@ public abstract class DSLUtils {
 								}
 							}
 						} else {// 未处于参数区域
-							if (NamedScriptUtils.isParamBegin(b, c)) {
+							if (NamedScriptUtils.isParamBegin(a, b, c)) {
 								isParam = true;
 								paramName.setLength(0);
 								paramName.append(c);
