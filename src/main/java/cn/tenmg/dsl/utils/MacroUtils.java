@@ -103,7 +103,7 @@ public abstract class MacroUtils {
 										}
 										logic.append(c);
 									} else {
-										if (NamedScriptUtils.isParamBegin(b, c)) {
+										if (NamedScriptUtils.isParamBegin(a, b, c)) {
 											isParam = true;
 											paramName = new StringBuilder();
 											paramName.append(c);
