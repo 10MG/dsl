@@ -14,6 +14,7 @@ import cn.tenmg.dsl.Macro;
  * 
  * @author 赵伟均 wjzhao@aliyun.com
  *
+ * @since 1.0.0
  */
 public abstract class MacroUtils {
 
@@ -71,7 +72,7 @@ public abstract class MacroUtils {
 								if (c == DSLUtils.BACKSLASH) {
 									backslashes++;
 								} else {
-									if (NamedScriptUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+									if (DSLUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
 										isString = false;
 									}
 									backslashes = 0;
@@ -94,7 +95,7 @@ public abstract class MacroUtils {
 									deep++;
 								} else {
 									if (isParam) {
-										if (NamedScriptUtils.isParamChar(c)) {
+										if (DSLUtils.isParamChar(c)) {
 											paramName.append(c);
 										} else {
 											isParam = false;
@@ -103,7 +104,7 @@ public abstract class MacroUtils {
 										}
 										logic.append(c);
 									} else {
-										if (NamedScriptUtils.isParamBegin(a, b, c)) {
+										if (DSLUtils.isParamBegin(a, b, c)) {
 											isParam = true;
 											paramName = new StringBuilder();
 											paramName.append(c);

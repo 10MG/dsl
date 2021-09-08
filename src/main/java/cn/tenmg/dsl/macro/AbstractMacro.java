@@ -13,7 +13,8 @@ import cn.tenmg.dsl.Macro;
  * 抽象宏，封装宏基本功能
  * 
  * @author 赵伟均 wjzhao@aliyun.com
- *
+ * 
+ * @since 1.0.0
  */
 public abstract class AbstractMacro implements Macro {
 

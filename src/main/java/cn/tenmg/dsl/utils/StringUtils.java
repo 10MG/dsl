@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
  * 字符串工具类
  * 
  * @author 赵伟均 wjzhao@aliyun.com
- *
+ * 
+ * @since 1.0.0
  */
 public abstract class StringUtils {
 
