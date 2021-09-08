@@ -10,7 +10,7 @@
 	<packaging>jar</packaging>
 
 	<name>dsl</name>
-	<url>www.10mg.cn</url>
+	<url>https://gitee.com/tenmg/dsl</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
