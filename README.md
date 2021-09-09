@@ -258,16 +258,3 @@ public class DslApp {
 
 }
 ```
-
-本例控制台输出为
-
-```
-SELECT
-  *
-FROM STAFF_INFO S
-WHERE
-   S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition
-  AND S.STAFF_NAME LIKE :staffName
-
-
-```
