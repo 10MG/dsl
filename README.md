@@ -197,7 +197,7 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
 pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使用版本号替换
 
 ```
-<!-- https://mvnrepository.com/artifact/cn.tenmg/flink-jobs -->
+<!-- https://mvnrepository.com/artifact/cn.tenmg/dsl -->
 <dependency>
     <groupId>cn.tenmg</groupId>
     <artifactId>dsl</artifactId>
