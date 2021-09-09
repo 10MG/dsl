@@ -220,7 +220,8 @@ public class DslApp {
 				+ "  单行注释的前缀、多行注释的前后缀都可以在dsl.properties配置文件中自定义，最多支持两个字符。\r\n"
 				+ "  对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。 */\r\n"
 				+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
-				+ "  #[AND S.STAFF_ID = :staffId]\r\n" + "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
+				+ "  #[AND S.STAFF_ID = :staffId]\r\n"
+				+ "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
 
 		Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
 				JDBCParamsParser.getInstance());
