@@ -19,10 +19,10 @@ import cn.tenmg.dsl.Script;
  */
 public abstract class DSLUtils {
 
-	public static final char BACKSLASH = '\\', BLANK_SPACE = '\u0020', PARAM_BEGIN = ':', COMMA = ',', PARAM_MARK = '?';
+	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', PARAM_BEGIN = ':',
+			COMMA = ',', PARAM_MARK = '?';
 
-	private static final char SINGLE_QUOTATION_MARK = '\'', LINE_BREAK = '\n', DYNAMIC_BEGIN[] = { '#', '[' },
-			DYNAMIC_END = ']';
+	private static final char LINE_BREAK = '\n', DYNAMIC_BEGIN[] = { '#', '[' }, DYNAMIC_END = ']';
 
 	private static char SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][] = { { '/', '*' } },
 			MILTILINE_COMMENT_SUFFIXES[][] = { { '*', '/' } };
