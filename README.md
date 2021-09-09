@@ -1,18 +1,18 @@
 # DSL
 
-# 一、简介
+## 简介
 
 <p style="text-indent:2em">
 DSL的全称是动态脚本语言（Dynamic Script Language），它是一种对脚本语言的一种扩展。DSL使用特殊字符“#[]”标记动态片段，当解析时，判断实际传入参数值是否为空（null）决定是否保留该片段，从而达到动态执行不同脚本目的。以此来避免程序员手动拼接繁杂的脚本，使得程序员能从繁杂的业务逻辑中解脱出来。此外，DSL脚本支持宏，来增强脚本的动态逻辑处理能力。
 </p>
 
-# 二、动态片段
+## 动态片段
 
 <p style="text-indent:2em">
 DSL使用特殊字符“#[]”标记动态片段，动态片段可以是任意脚本片段，参数使用冒号加参数名表示（例如，:staffName）。
 </p>
 
-## 例子
+### 例子
 
 <p style="text-indent:2em">
 例如，可以对SQL脚本进行动态化解析。假设有一张员工信息表STAFF_INFO，表结构详见如下建表语句：
@@ -88,7 +88,7 @@ SELECT
    AND S.STAFF_NAME LIKE :staffName
 ```
 
-# 三、宏
+## 宏
 
 <p style="text-indent:2em">宏是动态脚本语言（DSL）的重要组成部分，通过宏可以实现一些简单的逻辑处理。宏是基于Java内置的JavaScript引擎实现的，因此其语法是JavaScript语法，而不是Java。目前已实现的宏包括：
 
@@ -150,7 +150,42 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
   #[AND S.STAFF_NAME LIKE :staffName]
 ```
 
-# 四、特别注意
+## 使用注释
+
+<p style="text-indent:2em">
+1.2.0版本以后注释中的命名参数表达式（如`:paramName`）不在被认为是参数，二是会被原样保留。注释可以在动态片段内部，动态片段内部的注释会跟随动态片段保留而保留，去除而去除；注释也可以在动态片段外部，动态片段外部的注释会被完整保留在脚本中。单行注释的前缀和多行注释的前、后缀都可以在`dsl.properties`配置文件中自定义，最多支持两个字符。对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。对于多行注释后缀，使用一个字符时，不能使用字符“]”。
+</p>
+
+<p style="text-indent:2em">
+单行注释的前缀默认为“--”或“//”，例子：
+</p>
+
+```
+-- 这是单行注释……
+// 这是单行注释……
+```
+
+<p style="text-indent:2em">
+多行注释的前缀默认为“/*”后缀默认为“*/”，例子：
+</p>
+
+```
+/* 这是多行
+   注释…… */
+```
+
+## 配置文件
+
+<p style="text-indent:2em">
+通过`dsl.properties`配置文件可以调整注释的配置。单行注释前缀通过`comment.singleline`指定，多个前缀之间使用“,”隔开。多行注释前、后缀通过`comment.multiline`指定，成对配置，使用“,”隔开前缀和后缀，多对多行注释前后缀之间使用“;”隔开。`dsl.properties`默认的配置内容为：
+</p>
+
+```
+comment.singleline=--,//
+comment.multiline=/*,*/
+```
+
+## 特别注意
 
 <p style="text-indent:2em">
 并非所有参数相关的脚本片段都需要使用动态片段，应该根据需要确定是否使用动态片段。例如，只允许查询本部门员工信息的情况下，当前部门（curDepartmentId）这个参数是必须的，该片段就应该静态化表示：
@@ -166,7 +201,7 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
   #[AND S.STAFF_NAME LIKE :staffName]
 ```
 
-# 五、使用说明
+## 使用说明
 以基于Maven项目为例
 
 pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使用版本号替换
