@@ -205,7 +205,7 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 </dependency>
 ```
 
-调用DSLUtils.parse方法，传入动态脚本和参数执行解析
+调用DSLUtils.parse方法，传入动态脚本和参数执行动态解析，然后再调用DSLUtils.toScript方法将含命名参数的脚本解析为实际可执行的脚本（和参数）。
 
 ```
 public class DslApp {
