@@ -186,49 +186,49 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 public class DslApp {
 
     public static void main(String[] args) {
-	NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_INFO S\r\n"
-			+ "WHERE #[if(:curDepartmentId == '01') 1=1 -- 添加恒等条件， 使得后面的动态条件可以统一，而不需要去除“AND”（注：这里是单行注释）]\r\n"
-			+ "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n"
-			+ "  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n"
-			+ "  /* 注释可以在动态片段内部，动态片段内部的注释会跟随动态片段保留而保留，去除而去除；\r\n"
-			+ "  注释也可以在动态片段外部，动态片段外部的注释会被完整保留在脚本中。\r\n"
-			+ "  单行注释的前缀、多行注释的前后缀都可以在dsl.properties配置文件中自定义，最多支持两个字符。\r\n"
-			+ "  对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。 */\r\n"
-			+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
-			+ "  #[AND S.STAFF_ID = :staffId]\r\n" + "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
-	
-	Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
-			JDBCParamsParser.getInstance());
-	String sql = script.getValue();
-	List<Object> params = script.getParams();
-	// Use SQL and parameters to execute JDBC
-	
-	// Plain script, such as plain SQL
-	sql = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
-	
-		@Override
-		protected String convert(Object value) {
-			if (value instanceof Date) {
-				return parse((Date) value);
-			} else if (value instanceof Calendar) {
-				Date date = ((Calendar) value).getTime();
-				if (date == null) {
-					return "null";
+		NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_INFO S\r\n"
+				+ "WHERE #[if(:curDepartmentId == '01') 1=1 -- 添加恒等条件， 使得后面的动态条件可以统一，而不需要去除“AND”（注：这里是单行注释）]\r\n"
+				+ "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n"
+				+ "  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n"
+				+ "  /* 注释可以在动态片段内部，动态片段内部的注释会跟随动态片段保留而保留，去除而去除；\r\n"
+				+ "  注释也可以在动态片段外部，动态片段外部的注释会被完整保留在脚本中。\r\n"
+				+ "  单行注释的前缀、多行注释的前后缀都可以在dsl.properties配置文件中自定义，最多支持两个字符。\r\n"
+				+ "  对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。 */\r\n"
+				+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
+				+ "  #[AND S.STAFF_ID = :staffId]\r\n" + "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
+
+		Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
+				JDBCParamsParser.getInstance());
+		String sql = script.getValue();
+		List<Object> params = script.getParams();
+		// Use SQL and parameters to execute JDBC
+
+		// Plain script, such as plain SQL
+		sql = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
+
+			@Override
+			protected String convert(Object value) {
+				if (value instanceof Date) {
+					return parse((Date) value);
+				} else if (value instanceof Calendar) {
+					Date date = ((Calendar) value).getTime();
+					if (date == null) {
+						return "null";
+					} else {
+						return parse(date);
+					}
 				} else {
-					return parse(date);
+					return value.toString();
 				}
-			} else {
-				return value.toString();
 			}
-		}
-	
-		private String parse(Date date) {
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-			return "'" + sdf.format(date) + "'";
-		}
-	
-	}).getValue();
-	// Use SQL to execute JDBC
+
+			private String parse(Date date) {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+				return "'" + sdf.format(date) + "'";
+			}
+
+		}).getValue();
+		// Use SQL to execute JDBC
     }
 
 }
