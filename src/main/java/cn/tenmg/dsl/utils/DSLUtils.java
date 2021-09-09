@@ -32,20 +32,19 @@ public abstract class DSLUtils {
 	static {
 		try {
 			Properties config = PropertiesLoaderUtils.loadFromClassPath("dsl.properties");
-			String[] singlelineCommentPrefixes = config.getProperty("comment.prefixes.singleline", "--").split(","),
-					miltilineCommentPrefixes = config.getProperty("comment.prefixes.multiline", "/*").split(","),
-					miltilineCommentSuffixes = config.getProperty("comment.suffixes.multiline", "*\\").split(",");
+			String[] singlelineCommentPrefixes = config.getProperty("comment.singleline", "--").split(","),
+					miltilineComments = config.getProperty("comment.multiline", "/*,*/").split(";");
 			SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
-			MILTILINE_COMMENT_PREFIXES = new char[miltilineCommentPrefixes.length][];
-			MILTILINE_COMMENT_SUFFIXES = new char[miltilineCommentSuffixes.length][];
+			MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
+			MILTILINE_COMMENT_SUFFIXES = new char[miltilineComments.length][];
 			for (int i = 0; i < singlelineCommentPrefixes.length; i++) {
 				SINGLELINE_COMMENT_PREFIXES[i] = singlelineCommentPrefixes[i].toCharArray();
 			}
-			for (int i = 0; i < miltilineCommentPrefixes.length; i++) {
-				MILTILINE_COMMENT_PREFIXES[i] = miltilineCommentPrefixes[i].toCharArray();
-			}
-			for (int i = 0; i < miltilineCommentSuffixes.length; i++) {
-				MILTILINE_COMMENT_SUFFIXES[i] = miltilineCommentSuffixes[i].toCharArray();
+			String[] miltilineComment;
+			for (int i = 0; i < miltilineComments.length; i++) {
+				miltilineComment = miltilineComments[i].split(",");
+				MILTILINE_COMMENT_PREFIXES[i] = miltilineComment[0].toCharArray();
+				MILTILINE_COMMENT_SUFFIXES[i] = miltilineComment[1].toCharArray();
 			}
 		} catch (Exception e) {
 		}
