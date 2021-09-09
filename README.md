@@ -164,7 +164,13 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ## 配置文件
 
-通过`dsl.properties`配置文件可以调整注释的配置。单行注释前缀通过`comment.singleline`指定，多个前缀之间使用`,`隔开。多行注释前、后缀通过`comment.multiline`指定，成对配置，使用`,`隔开前缀和后缀，多对多行注释前后缀之间使用`;`隔开。`dsl.properties`默认的配置内容为：
+通过`dsl.properties`配置文件可以调整注释的配置。
+
+通过`comment.singleline`指定单行注释前缀，多个前缀之间使用`,`隔开。
+
+通过`comment.multiline`指定多行注释前、后缀，成对配置，使用`,`隔开前缀和后缀，多对多行注释前后缀之间使用`;`隔开。
+
+`dsl.properties`默认的配置内容为：
 
 ```
 comment.singleline=--,//
