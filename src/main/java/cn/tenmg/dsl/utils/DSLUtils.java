@@ -87,7 +87,7 @@ public abstract class DSLUtils {
 		HashMap<Integer, Map<String, Object>> contexts = new HashMap<Integer, Map<String, Object>>();
 		while (i < len) {
 			c = dsl.charAt(i);
-			if (isString) {
+			if (isString) {// 字符串内
 				if (c == BACKSLASH) {
 					backslashes++;
 				} else {
@@ -101,14 +101,7 @@ public abstract class DSLUtils {
 				} else {
 					script.append(c);
 				}
-			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
-				isString = true;
-				if (deep > 0) {
-					dslMap.get(deep).append(c);
-				} else {
-					script.append(c);
-				}
-			} else if (isSinglelineComment) {
+			} else if (isSinglelineComment) {// 单行注释内
 				if (isDynamic && isDynamicEnd(c)) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
 					if (inValidMap.get(deep) == null) {// 不含无效参数
@@ -134,7 +127,7 @@ public abstract class DSLUtils {
 						script.append(c);
 					}
 				}
-			} else if (isMiltilineComment) {
+			} else if (isMiltilineComment) {// 多行注释内
 				if (isMiltilineCommentEnd(b, c)) {
 					isMiltilineComment = false;
 				}
@@ -143,14 +136,21 @@ public abstract class DSLUtils {
 				} else {
 					script.append(c);
 				}
-			} else if (isSinglelineCommentBegin(b, c)) {
+			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
+				isString = true;
+				if (deep > 0) {
+					dslMap.get(deep).append(c);
+				} else {
+					script.append(c);
+				}
+			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
 				isSinglelineComment = true;
 				if (deep > 0) {
 					dslMap.get(deep).append(c);
 				} else {
 					script.append(c);
 				}
-			} else if (isMiltilineCommentBegin(b, c)) {
+			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
 				isMiltilineComment = true;
 				if (deep > 0) {
 					dslMap.get(deep).append(c);
@@ -336,7 +336,7 @@ public abstract class DSLUtils {
 				paramName = new StringBuilder();
 		while (i < len) {
 			char c = namedscript.charAt(i);
-			if (isString) {
+			if (isString) {// 字符串内
 				if (c == BACKSLASH) {
 					backslashes++;
 				} else {
@@ -346,27 +346,27 @@ public abstract class DSLUtils {
 					backslashes = 0;
 				}
 				scriptBuilder.append(c);
-			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
-				isString = true;
-				scriptBuilder.append(c);
-			} else if (isSinglelineComment) {
+			} else if (isSinglelineComment) {// 单行注释内
 				commentBuilder.append(c);
 				if (c == LINE_BREAK) {
 					isSinglelineComment = false;
 					scriptBuilder.append(commentBuilder);
 					commentBuilder.setLength(0);
 				}
-			} else if (isMiltilineComment) {
+			} else if (isMiltilineComment) {// 多行注释内
 				commentBuilder.append(c);
 				if (isMiltilineCommentEnd(b, c)) {
 					isSinglelineComment = false;
 					scriptBuilder.append(commentBuilder);
 					commentBuilder.setLength(0);
 				}
-			} else if (isSinglelineCommentBegin(b, c)) {
+			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
+				isString = true;
+				scriptBuilder.append(c);
+			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
 				isSinglelineComment = true;
 				commentBuilder.append(c);
-			} else if (isMiltilineCommentBegin(b, c)) {
+			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
 				isMiltilineComment = true;
 				commentBuilder.append(c);
 			} else if (isParam) {// 处于参数区域
