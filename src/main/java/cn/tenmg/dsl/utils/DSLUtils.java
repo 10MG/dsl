@@ -20,7 +20,7 @@ import cn.tenmg.dsl.Script;
 public abstract class DSLUtils {
 
 	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', PARAM_BEGIN = ':',
-			COMMA = ',', PARAM_MARK = '?';
+			EMBED_BEGIN = '#', COMMA = ',', PARAM_MARK = '?';
 
 	private static final char LINE_BREAK = '\n', DYNAMIC_BEGIN[] = { '#', '[' }, DYNAMIC_END = ']';
 
@@ -78,11 +78,13 @@ public abstract class DSLUtils {
 				isSinglelineComment = false, // 是否在单行注释区域
 				isMiltilineComment = false, // 是否在多行注释区域
 				isDynamic = false, // 是否在动态脚本区域
-				isParam = false;// 是否在参数区域
+				isParam = false, // 是否在参数区域
+				isEmbed = false;// 是否在嵌入式参数区域
 		StringBuilder script = new StringBuilder(), paramName = new StringBuilder();
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		HashMap<Integer, Boolean> inValidMap = new HashMap<Integer, Boolean>();
-		HashMap<Integer, Set<String>> validMap = new HashMap<Integer, Set<String>>();
+		HashMap<Integer, Set<String>> validMap = new HashMap<Integer, Set<String>>(),
+				embedMap = new HashMap<Integer, Set<String>>();
 		HashMap<Integer, StringBuilder> dslMap = new HashMap<Integer, StringBuilder>();
 		HashMap<Integer, Map<String, Object>> contexts = new HashMap<Integer, Map<String, Object>>();
 		while (i < len) {
@@ -105,10 +107,12 @@ public abstract class DSLUtils {
 				if (isDynamic && isDynamicEnd(c)) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
 					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, contexts, deep, false);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
+								false);
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, contexts, deep, true);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
+								true);
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
@@ -162,19 +166,31 @@ public abstract class DSLUtils {
 					if (isParam) {// 处于动态参数区域
 						isParam = false;// 结束动态参数区域
 						String name = paramName.toString();
-						Object value = params.get(name);
+						Object value = ParamsUtils.getParam(params, name);
 						if (value != null) {
 							validMap.get(deep).add(name);
 							paramName.setLength(0);
 						} else if (deep > 0) {
 							inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
 						}
+					} else if (isEmbed) {
+						isEmbed = false;// 结束动态嵌入式参数区域
+						String name = paramName.toString();
+						Object value = ParamsUtils.getParam(params, name);
+						if (value != null) {
+							embedMap.get(deep).add(name);
+							paramName.setLength(0);
+						} else if (deep > 0) {
+							inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+						}
 					}
 					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, contexts, deep, false);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
+								false);
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, contexts, deep, true);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
+								true);
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
@@ -196,7 +212,7 @@ public abstract class DSLUtils {
 						} else {// 离开动态参数区域
 							isParam = false;
 							String name = paramName.toString();
-							Object value = params.get(name);
+							Object value = ParamsUtils.getParam(params, name);
 							if (value != null) {
 								validMap.get(deep).add(name);
 							} else if (deep >= 0) {
@@ -210,6 +226,43 @@ public abstract class DSLUtils {
 								deep++;
 								dslMap.put(deep, new StringBuilder());
 								validMap.put(deep, new HashSet<String>());
+								embedMap.put(deep, new HashSet<String>());
+							} else {
+								StringBuilder dslBuilder = dslMap.get(deep);
+								if (dslBuilder == null) {
+									dslBuilder = new StringBuilder();
+									dslMap.put(deep, dslBuilder);
+								}
+								dslBuilder.append(c);
+							}
+						}
+					} else if (isEmbed) {// 处于动态嵌入式参数区域
+						if (isParamChar(c)) {
+							paramName.append(c);
+							StringBuilder dslBuilder = dslMap.get(deep);
+							if (dslBuilder == null) {
+								dslBuilder = new StringBuilder();
+								dslMap.put(deep, dslBuilder);
+							}
+							dslBuilder.append(c);
+						} else {// 离开动态嵌入式参数区域
+							isEmbed = false;
+							String name = paramName.toString();
+							Object value = ParamsUtils.getParam(params, name);
+							if (value != null) {
+								embedMap.get(deep).add(name);
+							} else if (deep >= 0) {
+								inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+							}
+							paramName.setLength(0);
+
+							if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
+								StringBuilder dslBuilder = dslMap.get(deep);
+								dslBuilder.deleteCharAt(dslBuilder.length() - 1);// 删除#号
+								deep++;
+								dslMap.put(deep, new StringBuilder());
+								validMap.put(deep, new HashSet<String>());
+								embedMap.put(deep, new HashSet<String>());
 							} else {
 								StringBuilder dslBuilder = dslMap.get(deep);
 								if (dslBuilder == null) {
@@ -226,9 +279,14 @@ public abstract class DSLUtils {
 							deep++;
 							dslMap.put(deep, new StringBuilder());
 							validMap.put(deep, new HashSet<String>());
+							embedMap.put(deep, new HashSet<String>());
 						} else {
 							if (isParamBegin(a, b, c)) {
 								isParam = true;
+								paramName.setLength(0);
+								paramName.append(c);
+							} else if (isEmbedBegin(a, b, c)) {
+								isEmbed = true;
 								paramName.setLength(0);
 								paramName.append(c);
 							}
@@ -249,18 +307,36 @@ public abstract class DSLUtils {
 					deep++;
 					dslMap.put(deep, new StringBuilder());
 					validMap.put(deep, new HashSet<String>());
+					embedMap.put(deep, new HashSet<String>());
 				} else {
 					if (isParam) {// 处于参数区域
 						if (isParamChar(c)) {
 							paramName.append(c);
 							if (i == len - 1) {
 								String name = paramName.toString();
-								usedParams.put(name, params.get(name));
+								usedParams.put(name, ParamsUtils.getParam(params, name));
+								break;
 							}
 						} else {// 离开参数区域
 							isParam = false;
 							String name = paramName.toString();
-							usedParams.put(name, params.get(name));
+							usedParams.put(name, ParamsUtils.getParam(params, name));
+							if (i < len - 1) {
+								paramName.setLength(0);
+							}
+						}
+					} else if (isEmbed) {// 处于嵌入式参数区域
+						if (isParamChar(c)) {
+							paramName.append(c);
+							if (i == len - 1) {
+								script.setLength(script.length() - paramName.length());
+								script.append(ParamsUtils.getParam(params, paramName.toString()).toString());
+								break;
+							}
+						} else {// 离开嵌入式参数区域
+							isEmbed = false;
+							script.setLength(script.length() - paramName.length() - 1);// 需要将#号也删除
+							script.append(ParamsUtils.getParam(params, paramName.toString()).toString());
 							if (i < len - 1) {
 								paramName.setLength(0);
 							}
@@ -268,6 +344,10 @@ public abstract class DSLUtils {
 					} else {// 未处于参数区域
 						if (isParamBegin(a, b, c)) {
 							isParam = true;
+							paramName.setLength(0);
+							paramName.append(c);
+						} else if (isEmbedBegin(a, b, c)) {
+							isEmbed = true;
 							paramName.setLength(0);
 							paramName.append(c);
 						}
@@ -416,6 +496,21 @@ public abstract class DSLUtils {
 	}
 
 	/**
+	 * 根据指定的三个前后相邻字符b和c，判断其是否为嵌入式参数脚本参数的开始位置
+	 * 
+	 * @param a
+	 *            前第二个字符
+	 * @param b
+	 *            前第一个字符
+	 * @param c
+	 *            当前字符
+	 * @return 如果字符a不为“:”、字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
+	 */
+	public static boolean isEmbedBegin(char a, char b, char c) {
+		return b == EMBED_BEGIN && a != EMBED_BEGIN && is26LettersIgnoreCase(c);
+	}
+
+	/**
 	 * 根据指定的字符c，判断是否是参数字符（即大小写字母、数字、下划线、短横线）
 	 * 
 	 * @param c
@@ -467,6 +562,8 @@ public abstract class DSLUtils {
 	 *            含有无效参数标记
 	 * @param validMap
 	 *            有效参数表
+	 * @param embedMap
+	 *            嵌入式参数表
 	 * @param contexts
 	 *            宏运行上下文
 	 * @param deep
@@ -477,7 +574,8 @@ public abstract class DSLUtils {
 	private static final void processDSL(Map<String, Object> params, StringBuilder script,
 			HashMap<Integer, StringBuilder> dslMap, Map<String, Object> usedParams,
 			HashMap<Integer, Boolean> inValidMap, HashMap<Integer, Set<String>> validMap,
-			HashMap<Integer, Map<String, Object>> contexts, int deep, boolean emptyWhenNoMacro) {
+			HashMap<Integer, Set<String>> embedMap, HashMap<Integer, Map<String, Object>> contexts, int deep,
+			boolean emptyWhenNoMacro) {
 		Map<String, Object> context = contexts.get(deep);
 		if (context == null) {
 			context = new HashMap<String, Object>();
@@ -485,10 +583,19 @@ public abstract class DSLUtils {
 		}
 		StringBuilder dslBuilder = MacroUtils.execute(dslMap.get(deep), context, params, emptyWhenNoMacro);
 		if (deep == 1) {
-			script.append(dslBuilder);
+			if (embedMap.isEmpty()) {
+				script.append(dslBuilder);
+			} else {
+				String namedScript = dslBuilder.toString();
+				for (String name : embedMap.get(deep)) {
+					namedScript = namedScript.replaceAll(EMBED_BEGIN + name,
+							ParamsUtils.getParam(params, name).toString());
+				}
+				script.append(namedScript);
+			}
 			for (String name : validMap.get(deep)) {
 				if (!usedParams.containsKey(name) && dslBuilder.indexOf(PARAM_BEGIN + name) >= 0) {
-					usedParams.put(name, params.get(name));
+					usedParams.put(name, ParamsUtils.getParam(params, name));
 				}
 			}
 		} else {
