@@ -315,7 +315,6 @@ public abstract class DSLUtils {
 							if (i == len - 1) {
 								String name = paramName.toString();
 								usedParams.put(name, ParamsUtils.getParam(params, name));
-								break;
 							}
 						} else {// 离开参数区域
 							isParam = false;
@@ -328,7 +327,7 @@ public abstract class DSLUtils {
 					} else if (isEmbed) {// 处于嵌入式参数区域
 						if (isParamChar(c)) {
 							paramName.append(c);
-							if (i == len - 1) {
+							if (i == len - 1) {// 最后一个参数字符
 								script.setLength(script.length() - paramName.length());
 								script.append(ParamsUtils.getParam(params, paramName.toString()).toString());
 								break;
