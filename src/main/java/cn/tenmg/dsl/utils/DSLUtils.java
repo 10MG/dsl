@@ -329,13 +329,15 @@ public abstract class DSLUtils {
 							paramName.append(c);
 							if (i == len - 1) {// 最后一个参数字符
 								script.setLength(script.length() - paramName.length());
-								script.append(ParamsUtils.getParam(params, paramName.toString()).toString());
+								Object value = ParamsUtils.getParam(params, paramName.toString());
+								script.append(value == null ? "null" : value.toString());
 								break;
 							}
 						} else {// 离开嵌入式参数区域
 							isEmbed = false;
 							script.setLength(script.length() - paramName.length() - 1);// 需要将#号也删除
-							script.append(ParamsUtils.getParam(params, paramName.toString()).toString());
+							Object value = ParamsUtils.getParam(params, paramName.toString());
+							script.append(value == null ? "null" : value.toString());
 							if (i < len - 1) {
 								paramName.setLength(0);
 							}
@@ -586,9 +588,10 @@ public abstract class DSLUtils {
 				script.append(dslBuilder);
 			} else {
 				String namedScript = dslBuilder.toString();
+				Object value;
 				for (String name : embedMap.get(deep)) {
-					namedScript = namedScript.replaceAll(EMBED_BEGIN + name,
-							ParamsUtils.getParam(params, name).toString());
+					value = ParamsUtils.getParam(params, name);
+					namedScript = namedScript.replaceAll(EMBED_BEGIN + name, value == null ? "null" : value.toString());
 				}
 				script.append(namedScript);
 			}
