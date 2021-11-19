@@ -64,14 +64,15 @@ public abstract class DSLUtils {
 		if (params == null) {
 			params = new HashMap<String, Object>();
 		}
-		int len;
 		if (StringUtils.isBlank(dsl)) {
-			return new NamedScript(dsl, usedParams);
-		} else if ((len = dsl.length()) < 3) {// 长度太小（小于字符串“#[]”的长度）无法构成动态脚本，直接返回
 			return new NamedScript(dsl, usedParams);
 		}
 		dsl = StringUtils.stripStart(dsl, LINE_SPLITOR);// 去除仅含换行符的行
 		dsl = StringUtils.stripEnd(dsl, EMPTY_CHARS);// 去除空白字符
+		int len = dsl.length();
+		if (len < 3) {// 长度太小（小于字符串“#[]”的长度）无法构成动态，直接返回
+			return new NamedScript(dsl, usedParams);
+		}
 		int i = 0, deep = 0, backslashes = 0;// 连续反斜杠数
 		char a = BLANK_SPACE, b = BLANK_SPACE, c;
 		boolean isString = false, // 是否在字符串区域
