@@ -164,7 +164,7 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ## 扩展宏
 
-可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置宏即可使之生效：`macro.${myMacroName}=mypackage.MyMacro`。
+可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置对应的实现类即可使之生效：`macro.${myMacroName}=mypackage.MyMacro`。
 
 ## 使用注释
 
