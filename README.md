@@ -186,17 +186,25 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ## 配置文件
 
-通过`dsl.properties`配置文件可以调整注释的配置。
+通过`dsl.properties`配置文件可以调整DSL的配置，各配置项如下：
 
-通过`comment.singleline`指定单行注释前缀，多个前缀之间使用`,`隔开;
 
-通过`comment.multiline`指定多行注释前、后缀，成对配置，使用`,`隔开前缀和后缀，多对多行注释之间使用`;`隔开。
+配置项                | 默认值   | 说明
+---------------------|----------|--------------------------------
+`dynamic.prefix`     |  `#[`    | 动态脚本片段前缀，仅支持2个字符。
+`dynamic.suffix`     |  `]`     | 动态脚本片段后缀，仅支持1个字符。
+`param.prefix`       |  `:`     | 普通参数前缀，仅支持1个字符。
+`embed.prefix`       |  `#`     | 嵌入参数前缀，仅支持1个字符。
+`comment.singleline` |  `--,//` | 嵌入参数前缀，仅支持1个字符。
+`comment.multiline`  |  `/*,*/` | 嵌入参数前缀，仅支持1个字符。
+`macro.*`            | `macro.if=cn.tenmg.dsl.macro.If`<br>`macro.elseif=cn.tenmg.dsl.macro.ElseIf`<br>`macro.else=cn.tenmg.dsl.macro.Else` | 宏实现类配置。默认的配置分别对应`#[if]`、`#[elseif]`和`#[else]`三个逻辑判断宏。
 
-`dsl.properties`默认的配置内容为：
+如果用户想变更实际使用的配置文件，则需要在`dsl-context-loader.properties`中给配置文件相对classpath的具体位置，例如：
+
+ **dsl-context-loader.properties** 
 
 ```
-comment.singleline=--,//
-comment.multiline=/*,*/
+config.location=custom-dsl.properties
 ```
 
 ## 特别注意
