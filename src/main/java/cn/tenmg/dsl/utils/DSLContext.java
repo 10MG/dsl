@@ -11,7 +11,7 @@ import java.util.Properties;
  */
 public abstract class DSLContext {
 
-	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context.properties",
+	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context-loader.properties",
 			CONFIG_LOCATION_KEY = "config.location";
 
 	private static Properties defaultProperties, configProperties;
@@ -21,6 +21,10 @@ public abstract class DSLContext {
 			defaultProperties = PropertiesLoaderUtils.loadFromClassPath(DEFAULT_STRATEGIES_PATH);
 		} catch (Exception e) {
 			defaultProperties = new Properties();
+		}
+		try {
+			defaultProperties = PropertiesLoaderUtils.loadFromClassPath("dsl-default.properties");
+		} catch (Exception e) {
 		}
 		try {
 			String configLocation = defaultProperties.getProperty(CONFIG_LOCATION_KEY, "dsl.properties");
