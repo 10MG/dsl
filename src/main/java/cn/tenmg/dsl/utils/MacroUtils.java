@@ -39,7 +39,7 @@ public abstract class MacroUtils {
 			synchronized (MACROS) {
 				macro = MACROS.get(name);
 				if (macro == null) {
-					String key = MACRO_KEY_PREFIX + name, className = DSLConfiguration.getProperty(key);
+					String key = MACRO_KEY_PREFIX + name, className = DSLContext.getProperty(key);
 					if (StringUtils.isNotBlank(className)) {
 						try {
 							macro = (Macro) Class.forName(className).newInstance();

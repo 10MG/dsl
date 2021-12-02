@@ -27,12 +27,12 @@ public abstract class DSLUtils {
 	private static final String LINE_SPLITOR = "\r\n", EMPTY_CHARS = LINE_SPLITOR + "\t ";
 
 	static {
-		DYNAMIC_PREFIX = DSLConfiguration.getProperty("dynamic.prefix", "#[").toCharArray();
-		DYNAMIC_SUFFIX = DSLConfiguration.getProperty("dynamic.suffix", "]").charAt(0);
-		PARAM_PREFIX = DSLConfiguration.getProperty("param.prefix", ":").charAt(0);
-		EMBED_PREFIX = DSLConfiguration.getProperty("embed.prefix", "#").charAt(0);
-		String[] singlelineCommentPrefixes = DSLConfiguration.getProperty("comment.singleline", "--").split(","),
-				miltilineComments = DSLConfiguration.getProperty("comment.multiline", "/*,*/").split(";");
+		DYNAMIC_PREFIX = DSLContext.getProperty("dynamic.prefix", "#[").toCharArray();
+		DYNAMIC_SUFFIX = DSLContext.getProperty("dynamic.suffix", "]").charAt(0);
+		PARAM_PREFIX = DSLContext.getProperty("param.prefix", ":").charAt(0);
+		EMBED_PREFIX = DSLContext.getProperty("embed.prefix", "#").charAt(0);
+		String[] singlelineCommentPrefixes = DSLContext.getProperty("comment.singleline", "--").split(","),
+				miltilineComments = DSLContext.getProperty("comment.multiline", "/*,*/").split(";");
 		SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
 		MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
 		MILTILINE_COMMENT_SUFFIXES = new char[miltilineComments.length][];

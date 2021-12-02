@@ -3,15 +3,15 @@ package cn.tenmg.dsl.utils;
 import java.util.Properties;
 
 /**
- * DSL配置工具
+ * DSL上下文
  * 
  * @author June wjzhao@aliyun.com
  * 
  * @since 1.2.3
  */
-public abstract class DSLConfiguration {
+public abstract class DSLContext {
 
-	private static final String DEFAULT_STRATEGIES_PATH = "dsl-default.properties",
+	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context.properties",
 			CONFIG_LOCATION_KEY = "config.location";
 
 	private static Properties defaultProperties, configProperties;
@@ -36,7 +36,7 @@ public abstract class DSLConfiguration {
 	 * @return 配置文件所在位置
 	 */
 	public static String getConfigLocation() {
-		return getProperty(DSLConfiguration.CONFIG_LOCATION_KEY);
+		return getProperty(DSLContext.CONFIG_LOCATION_KEY);
 	}
 
 	/**
