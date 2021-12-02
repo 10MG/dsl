@@ -3,9 +3,6 @@ package cn.tenmg.dsl.macro;
 import java.util.Map;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
-import cn.tenmg.dsl.Macro;
 
 /**
  * if判断宏
@@ -14,19 +11,14 @@ import cn.tenmg.dsl.Macro;
  *
  * @since 1.0.0
  */
-public class If extends AbstractMacro implements Macro {
+public class If extends ScriptableMacro {
 
 	@Override
-	Object excute(ScriptEngine scriptEngine, String code, Map<String, Object> context) throws ScriptException {
-		Object result = scriptEngine.eval(code);
-		if (result != null) {
-			if (result instanceof Boolean) {
-				context.put("if", result);
-			} else {
-				return null;
-			}
-		}
-		return result;
+	StringBuilder excute(ScriptEngine scriptEngine, String logic, StringBuilder dslf, Map<String, Object> context)
+			throws Exception {
+		Object result = scriptEngine.eval(logic);
+		context.put("if", result);
+		return Boolean.TRUE.equals(result) ? dslf : emptyStringBuilder();
 	}
 
 }

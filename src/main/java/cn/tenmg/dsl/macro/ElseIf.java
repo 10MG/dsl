@@ -3,7 +3,6 @@ package cn.tenmg.dsl.macro;
 import java.util.Map;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 
 /**
  * else if判断宏
@@ -15,20 +14,10 @@ import javax.script.ScriptException;
 public class ElseIf extends If {
 
 	@Override
-	Object excute(ScriptEngine scriptEngine, String code, Map<String, Object> context) throws ScriptException {
-		Object ifValue = context.get("if");
-		if (ifValue == null) {
-			return null;
-		} else {
-			if (ifValue instanceof Boolean) {
-				if (((Boolean) ifValue).booleanValue()) {
-					return false;
-				} else {
-					return super.excute(scriptEngine, code, context);
-				}
-			}
-			return null;
-		}
+	StringBuilder excute(ScriptEngine scriptEngine, String logic, StringBuilder dslf, Map<String, Object> context)
+			throws Exception {
+		return Boolean.TRUE.equals(context.get("if")) ? emptyStringBuilder()
+				: super.excute(scriptEngine, logic, dslf, context);// if成立，则else if不成立；否则，继续当做if处理
 	}
 
 }

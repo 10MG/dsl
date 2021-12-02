@@ -1,11 +1,7 @@
 package cn.tenmg.dsl.utils;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
-
-import javax.script.ScriptException;
 
 import cn.tenmg.dsl.Macro;
 
@@ -17,6 +13,8 @@ import cn.tenmg.dsl.Macro;
  * @since 1.0.0
  */
 public abstract class MacroUtils {
+
+	private static final String MACRO_KEY_PREFIX = "macro.";
 
 	private static final char
 
@@ -31,16 +29,31 @@ public abstract class MacroUtils {
 			MACRO_LOGIC_END = ')';
 
 	/**
-	 * 宏
+	 * 宏查找表
 	 */
 	private static final Map<String, Macro> MACROS = new HashMap<String, Macro>();
 
-	static {
-		ServiceLoader<Macro> loader = ServiceLoader.load(Macro.class);
-		for (Iterator<Macro> it = loader.iterator(); it.hasNext();) {
-			Macro macro = it.next();
-			MACROS.put(macro.getClass().getSimpleName().toLowerCase(), macro);
+	private static Macro getMacro(String name) {
+		Macro macro = MACROS.get(name);
+		if (macro == null) {
+			synchronized (MACROS) {
+				macro = MACROS.get(name);
+				if (macro == null) {
+					String key = MACRO_KEY_PREFIX + name, className = DSLConfiguration.getProperty(key);
+					if (StringUtils.isNotBlank(className)) {
+						try {
+							macro = (Macro) Class.forName(className).newInstance();
+						} catch (InstantiationException | IllegalAccessException e) {
+							throw new IllegalArgumentException("Cannot instantiate Macro for name '" + name + "'", e);
+						} catch (ClassNotFoundException e) {
+							throw new IllegalArgumentException("Wrong Macro configuration for name " + name + "'", e);
+						}
+					}
+					MACROS.put(name, macro);
+				}
+			}
 		}
+		return macro;
 	}
 
 	public static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
@@ -53,7 +66,7 @@ public abstract class MacroUtils {
 			char c = dsl.charAt(i);
 			if (c == MACRO_LOGIC_START) {// 宏逻辑开始
 				if (macroName.length() > 0) {
-					Macro macro = MACROS.get(macroName.toString());
+					Macro macro = getMacro(macroName.toString());
 					if (macro == null) {// 找不到对应的宏
 						if (returnEmptyWhenNoMacro) {
 							return new StringBuilder();
@@ -82,7 +95,7 @@ public abstract class MacroUtils {
 								if (c == MACRO_LOGIC_END) {// 宏逻辑结束
 									if (deep == 0) {
 										if (logic.length() > 0) {
-											return execute(dsl, context, usedParams, macro, logic.toString(), i);// 当前字符为括号，当前位置即为宏名称及逻辑结束的位置
+											return execute(dsl, context, usedParams, macro, logic.toString(), i);
 										} else {
 											return dsl;
 										}
@@ -126,7 +139,7 @@ public abstract class MacroUtils {
 				}
 			} else if (c <= DSLUtils.BLANK_SPACE) {
 				if (macroName.length() > 0) {
-					Macro macro = MACROS.get(macroName.toString());
+					Macro macro = getMacro(macroName.toString());
 					if (macro == null) {// 找不到对应的宏
 						if (returnEmptyWhenNoMacro) {
 							return new StringBuilder();
@@ -153,25 +166,20 @@ public abstract class MacroUtils {
 
 	private static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
 			Map<String, Object> params, Macro macro, String logic, int macroEndIndex) {
-		Object result = null;
 		try {
-			result = macro.excute(logic, context, params);
-		} catch (ScriptException e) {
+			return macro.excute(logic, dsl.delete(0, macroEndIndex + 1), context, params);
+		} catch (Exception e) {
+			e.printStackTrace();
 			return dsl;
 		}
-		if (result == null) {
-			return dsl;
-		} else {
-			if (result instanceof Boolean) {
-				if (((Boolean) result).booleanValue()) {
-					dsl.delete(0, macroEndIndex + 1);
-					return dsl;
-				} else {
-					return new StringBuilder();
-				}
-			} else {
-				return new StringBuilder(result.toString()).append(dsl.delete(0, macroEndIndex + 1));
-			}
-		}
+		/*
+		 * Object result = null; try { result = macro.excute(logic, context, params); }
+		 * catch (ScriptException e) { return dsl; } if (result == null) { return dsl; }
+		 * else { if (result instanceof Boolean) { if (((Boolean)
+		 * result).booleanValue()) { dsl.delete(0, macroEndIndex + 1); return dsl; }
+		 * else { return new StringBuilder(); } } else { return new
+		 * StringBuilder(result.toString()).append(dsl.delete(0, macroEndIndex + 1)); }
+		 * }
+		 */
 	}
 }

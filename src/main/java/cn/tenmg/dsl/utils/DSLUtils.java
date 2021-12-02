@@ -3,7 +3,6 @@ package cn.tenmg.dsl.utils;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import cn.tenmg.dsl.NamedScript;
@@ -19,34 +18,32 @@ import cn.tenmg.dsl.Script;
  */
 public abstract class DSLUtils {
 
-	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', PARAM_BEGIN = ':',
-			EMBED_BEGIN = '#', COMMA = ',', PARAM_MARK = '?';
+	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', COMMA = ',',
+			PARAM_MARK = '?';
 
-	private static final char LINE_BREAK = '\n', DYNAMIC_BEGIN[] = { '#', '[' }, DYNAMIC_END = ']';
-
-	private static char SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][] = { { '/', '*' } },
-			MILTILINE_COMMENT_SUFFIXES[][] = { { '*', '/' } };
+	private static final char DYNAMIC_PREFIX[], DYNAMIC_SUFFIX, PARAM_PREFIX, EMBED_PREFIX, LINE_BREAK = '\n',
+			SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_SUFFIXES[][];
 
 	private static final String LINE_SPLITOR = "\r\n", EMPTY_CHARS = LINE_SPLITOR + "\t ";
 
 	static {
-		try {
-			Properties config = PropertiesLoaderUtils.loadFromClassPath("dsl.properties");
-			String[] singlelineCommentPrefixes = config.getProperty("comment.singleline", "--").split(","),
-					miltilineComments = config.getProperty("comment.multiline", "/*,*/").split(";");
-			SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
-			MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
-			MILTILINE_COMMENT_SUFFIXES = new char[miltilineComments.length][];
-			for (int i = 0; i < singlelineCommentPrefixes.length; i++) {
-				SINGLELINE_COMMENT_PREFIXES[i] = singlelineCommentPrefixes[i].toCharArray();
-			}
-			String[] miltilineComment;
-			for (int i = 0; i < miltilineComments.length; i++) {
-				miltilineComment = miltilineComments[i].split(",");
-				MILTILINE_COMMENT_PREFIXES[i] = miltilineComment[0].toCharArray();
-				MILTILINE_COMMENT_SUFFIXES[i] = miltilineComment[1].toCharArray();
-			}
-		} catch (Exception e) {
+		DYNAMIC_PREFIX = DSLConfiguration.getProperty("dynamic.prefix", "#[").toCharArray();
+		DYNAMIC_SUFFIX = DSLConfiguration.getProperty("dynamic.suffix", "]").charAt(0);
+		PARAM_PREFIX = DSLConfiguration.getProperty("param.prefix", ":").charAt(0);
+		EMBED_PREFIX = DSLConfiguration.getProperty("embed.prefix", "#").charAt(0);
+		String[] singlelineCommentPrefixes = DSLConfiguration.getProperty("comment.singleline", "--").split(","),
+				miltilineComments = DSLConfiguration.getProperty("comment.multiline", "/*,*/").split(";");
+		SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
+		MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
+		MILTILINE_COMMENT_SUFFIXES = new char[miltilineComments.length][];
+		for (int i = 0; i < singlelineCommentPrefixes.length; i++) {
+			SINGLELINE_COMMENT_PREFIXES[i] = singlelineCommentPrefixes[i].toCharArray();
+		}
+		String[] miltilineComment;
+		for (int i = 0; i < miltilineComments.length; i++) {
+			miltilineComment = miltilineComments[i].split(",");
+			MILTILINE_COMMENT_PREFIXES[i] = miltilineComment[0].toCharArray();
+			MILTILINE_COMMENT_SUFFIXES[i] = miltilineComment[1].toCharArray();
 		}
 	}
 
@@ -493,7 +490,7 @@ public abstract class DSLUtils {
 	 * @return 如果字符a不为“:”、字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
 	 */
 	public static boolean isParamBegin(char a, char b, char c) {
-		return b == PARAM_BEGIN && a != PARAM_BEGIN && is26LettersIgnoreCase(c);
+		return b == PARAM_PREFIX && a != PARAM_PREFIX && is26LettersIgnoreCase(c);
 	}
 
 	/**
@@ -508,7 +505,7 @@ public abstract class DSLUtils {
 	 * @return 如果字符a不为“:”、字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
 	 */
 	public static boolean isEmbedBegin(char a, char b, char c) {
-		return b == EMBED_BEGIN && a != EMBED_BEGIN && is26LettersIgnoreCase(c);
+		return b == EMBED_PREFIX && a != EMBED_PREFIX && is26LettersIgnoreCase(c);
 	}
 
 	/**
@@ -591,12 +588,13 @@ public abstract class DSLUtils {
 				Object value;
 				for (String name : embedMap.get(deep)) {
 					value = ParamsUtils.getParam(params, name);
-					namedScript = namedScript.replaceAll(EMBED_BEGIN + name, value == null ? "null" : value.toString());
+					namedScript = namedScript.replaceAll(EMBED_PREFIX + name,
+							value == null ? "null" : value.toString());
 				}
 				script.append(namedScript);
 			}
 			for (String name : validMap.get(deep)) {
-				if (!usedParams.containsKey(name) && dslBuilder.indexOf(PARAM_BEGIN + name) >= 0) {
+				if (!usedParams.containsKey(name) && dslBuilder.indexOf(PARAM_PREFIX + name) >= 0) {
 					usedParams.put(name, ParamsUtils.getParam(params, name));
 				}
 			}
@@ -666,7 +664,7 @@ public abstract class DSLUtils {
 	 * @return
 	 */
 	private static boolean isDynamicBegin(char b, char c) {
-		return b == DYNAMIC_BEGIN[0] && c == DYNAMIC_BEGIN[1];
+		return b == DYNAMIC_PREFIX[0] && c == DYNAMIC_PREFIX[1];
 	}
 
 	/**
@@ -677,7 +675,7 @@ public abstract class DSLUtils {
 	 * @return
 	 */
 	private static boolean isDynamicEnd(char c) {
-		return c == DYNAMIC_END;
+		return c == DYNAMIC_SUFFIX;
 	}
 
 	/**

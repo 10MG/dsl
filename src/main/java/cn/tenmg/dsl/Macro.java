@@ -2,8 +2,6 @@ package cn.tenmg.dsl;
 
 import java.util.Map;
 
-import javax.script.ScriptException;
-
 /**
  * 宏
  * 
@@ -15,14 +13,16 @@ public interface Macro {
 	/**
 	 * 执行宏并返回计算结果
 	 * 
-	 * @param code
+	 * @param logic
 	 *            宏逻辑代码
-	 * 
+	 * @param dslf
+	 *            DSL动态片段
 	 * @param context
 	 *            宏运行的上下文
 	 * @param params
 	 *            宏运行的参数
-	 * @return 返回可执行结构化查询语言（SQL）的片段
+	 * @return 返回可执行脚本语言的片段
 	 */
-	Object excute(String code, Map<String, Object> context, Map<String, Object> params) throws ScriptException;
+	StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
+			throws Exception;
 }
