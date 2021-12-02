@@ -3,7 +3,7 @@ package cn.tenmg.dsl;
 /**
  * 脚本对象模型
  * 
- * @author 赵伟均 wjzhao@aliyun.com
+ * @author June wjzhao@aliyun.com
  * 
  * @since 1.2.0
  */

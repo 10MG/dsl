@@ -5,7 +5,7 @@ import javax.swing.Spring;
 /**
  * 类工具类
  * 
- * @author 赵伟均 wjzhao@aliyun.com
+ * @author June wjzhao@aliyun.com
  * @see Spring
  * 
  * @since 1.2.0

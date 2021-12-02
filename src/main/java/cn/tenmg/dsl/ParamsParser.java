@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * 参数解析器
  * 
- * @author 赵伟均 wjzhao@aliyun.com
+ * @author June wjzhao@aliyun.com
  * 
  * @since 1.2.0
  *

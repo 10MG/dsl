@@ -12,7 +12,7 @@ import cn.tenmg.dsl.Macro;
 /**
  * 可运行脚本的宏
  * 
- * @author 赵伟均 wjzhao@aliyun.com
+ * @author June wjzhao@aliyun.com
  * 
  * @since 1.2.3
  */

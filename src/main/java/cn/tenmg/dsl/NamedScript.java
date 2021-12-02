@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * 使用命名参数的脚本对象模型
  * 
- * @author 赵伟均 wjzhao@aliyun.com
+ * @author June wjzhao@aliyun.com
  *
  * @since 1.0.0
  */
