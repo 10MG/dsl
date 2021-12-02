@@ -162,6 +162,10 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
   #[AND S.STAFF_NAME LIKE :staffName]
 ```
 
+## 扩展宏
+
+可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置宏即可使之生效：`macro.${myMacroName}=mypackage.MyMacro`。
+
 ## 使用注释
 
 1.2.0版本以后注释中的命名参数表达式（如`:paramName`）不再被认为是参数，而是会被原样保留，同样，动态片段也会被原样保留。也就是说，注释内的所有内容都会被原封不动地保留。
@@ -197,7 +201,7 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 `embed.prefix`       |  `#`     | 嵌入参数前缀，仅支持1个字符。
 `comment.singleline` |  `--,//` | 嵌入参数前缀，仅支持1个字符。
 `comment.multiline`  |  `/*,*/` | 嵌入参数前缀，仅支持1个字符。
-`macro.*`            | `macro.if=cn.tenmg.dsl.macro.If`<br>`macro.elseif=cn.tenmg.dsl.macro.ElseIf`<br>`macro.else=cn.tenmg.dsl.macro.Else` | 宏实现类配置。默认的配置分别对应`#[if]`、`#[elseif]`和`#[else]`三个逻辑判断宏。
+`macro.*`            | `macro.if=cn.tenmg.dsl.macro.If`<br>`macro.elseif=cn.tenmg.dsl.macro.ElseIf`<br>`macro.else=cn.tenmg.dsl.macro.Else` | 宏实现类配置。默认的配置分别对应`#[if]`、`#[elseif]`和`#[else]`三个内置的逻辑判断宏。
 
 如果用户想变更实际使用的配置文件，则需要在`dsl-context-loader.properties`中给配置文件相对classpath的具体位置，例如：
 
