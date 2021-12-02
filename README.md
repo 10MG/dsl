@@ -164,7 +164,46 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ## 扩展宏
 
-可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置对应的实现类即可使之生效：`macro.${myMacroName}=mypackage.MyMacro`。
+可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置对应的实现类即可使之生效。例如:
+
+1. 简单宏
+
+`#[mySimpleMacro]`宏可以编写`mypackage.MySimpleMacro`的实现类，并在配置文件中配置`macro.mySimpleMacro=mypackage.MySimpleMacro`。
+
+2. 逻辑宏
+
+`#[myLogicalMacro(…)]`宏可以编写`mypackage.MyLogicalMacro`的实现类，并在配置文件中配置`macro.myLogicalMacro=mypackage.MyLogicalMacro`。
+
+接口源码：
+
+```
+public interface Macro {
+	/**
+	 * 执行宏并返回计算结果
+	 * 
+	 * @param logic
+	 *            宏逻辑代码
+	 * @param dslf
+	 *            DSL动态片段
+	 * @param context
+	 *            宏运行的上下文
+	 * @param params
+	 *            宏运行的参数
+	 * @return 返回可执行脚本语言的片段
+	 */
+	StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
+			throws Exception;
+}
+```
+
+接口参数说明：
+
+参数      | 含义           | 说明
+----------|---------------|--------------------------------
+`logic`   | 宏逻辑代码     | 宏名称之后`(`和`)`之间的部分代码，如`if`/`elseif`宏的判断逻辑
+`dslf`    | DSL动态片段    | 宏包裹的部分代码（除去宏名称、括号和宏逻辑代码的部分）
+`context` | 宏运行的上下文 | 可以用于存储宏的上下文环境，以辅助后续的宏处理。例如`if`[`elseif`]`else`宏就需要存储上一个判断的结果，以辅助后续的判断。
+`params`  | 宏运行的参数   | 传入DSL解析的操作查找表。
 
 ## 使用注释
 
