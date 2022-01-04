@@ -164,17 +164,7 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ## 扩展宏
 
-可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏，在配置文件中配置对应的实现类即可使之生效。例如:
-
-1. 简单宏
-
-`#[mySimpleMacro]`宏可以编写`mypackage.MySimpleMacro`的实现类，并在配置文件中配置`macro.mySimpleMacro=mypackage.MySimpleMacro`。
-
-2. 逻辑宏
-
-`#[myLogicalMacro(…)]`宏可以编写`mypackage.MyLogicalMacro`的实现类，并在配置文件中配置`macro.myLogicalMacro=mypackage.MyLogicalMacro`。
-
-接口源码：
+可通过实现`cn.tenmg.dsl.Macro`接口来扩展宏。接口源码：
 
 ```
 public interface Macro {
@@ -204,6 +194,63 @@ public interface Macro {
 `dslf`    | DSL动态片段    | 宏包裹的部分代码（除去宏名称、括号和宏逻辑代码的部分）
 `context` | 宏运行的上下文 | 可以用于存储宏的上下文环境，以辅助后续的宏处理。例如`if`[`elseif`]`else`宏就需要存储上一个判断的结果，以辅助后续的判断。
 `params`  | 宏运行的参数   | 传入DSL解析的操作查找表。
+
+1.2.4版本开始，支持两种方式注入宏：一种是使用`@Macro`注解和配置文件中的扫描包名配置实现的注解扫描模式，另一种是直接通过配置文件指定宏的实现类名的配置类名模式。推荐使用注解扫描模式，因为使用起来更加灵活，避免反复修改配置文件。
+
+### 注解扫描模式
+
+1. 配置扫描的包
+
+在配置文件中，配置`scan.packages`指定扫描的包，如果不配置该值则默认仅扫描`cn.tenmg.dsl.macro`包。
+
+```
+scan.packages=mypackage
+```
+
+2. 编写宏的实现类
+
+```
+package mypackage;
+
+import java.util.Map;
+
+import cn.tenmg.dsl.annotion.Macro;
+
+@Macro(name = "MySimpleMacro")
+public class MySimpleMacro implements cn.tenmg.dsl.Macro {
+
+	@Override
+	public StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context,
+			Map<String, Object> params) throws Exception {
+		// TODO Your logic to process dslf or generate a new script fragment used for the actual excute
+		return dslf;// Returns the script fragment used for the actual excute
+	}
+
+}
+```
+
+### 配置类名模式
+
+除了可以通过注解扫描来注入宏之外，还可以通过配置文件中直接指定宏的实现类名来扩展或重写宏，例如有如下没有注解的宏实现类，可以在配置文件中直接配置`macro.myLogicalMacro=mypackage.MyLogicalMacro`使之生效：
+
+```
+package mypackage;
+
+import java.util.Map;
+
+import cn.tenmg.dsl.annotion.Macro;
+
+public class MySimpleMacro implements cn.tenmg.dsl.Macro {
+
+	@Override
+	public StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context,
+			Map<String, Object> params) throws Exception {
+		// TODO Your logic to process dslf or generate a new script fragment used for the actual excute
+		return dslf;// Returns the script fragment used for the actual excute
+	}
+
+}
+```
 
 ## 使用注释
 
