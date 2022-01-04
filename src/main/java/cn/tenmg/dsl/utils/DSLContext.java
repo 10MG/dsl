@@ -1,6 +1,10 @@
 package cn.tenmg.dsl.utils;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
+
+import cn.tenmg.dsl.Macro;
 
 /**
  * DSL上下文
@@ -12,7 +16,7 @@ import java.util.Properties;
 public abstract class DSLContext {
 
 	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context-loader.properties",
-			CONFIG_LOCATION_KEY = "config.location";
+			CONFIG_LOCATION_KEY = "config.location", CLASS_SUFFIX = ".class", SCAN_PACKAGES_KEY = "scan.packages";
 
 	private static Properties defaultProperties, configProperties;
 
@@ -31,6 +35,21 @@ public abstract class DSLContext {
 			configProperties = PropertiesLoaderUtils.loadFromClassPath(configLocation);
 		} catch (Exception e) {
 			configProperties = new Properties();
+		}
+		try {
+			int suffixLen = CLASS_SUFFIX.length();
+			scanMacros(defaultProperties, "cn.tenmg.dsl.macro", suffixLen);
+			String scanPackages = getProperty(SCAN_PACKAGES_KEY);
+			if (scanPackages != null) {
+				String[] basePackages = scanPackages.split(",");
+				for (int i = 0; i < basePackages.length; i++) {
+					scanMacros(configProperties, basePackages[i].trim(), suffixLen);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -67,6 +86,31 @@ public abstract class DSLContext {
 	public static String getProperty(String key, String defaultValue) {
 		return configProperties.containsKey(key) ? configProperties.getProperty(key)
 				: (defaultProperties.containsKey(key) ? defaultProperties.getProperty(key) : defaultValue);
+	}
+
+	private static void scanMacros(Properties properties, String basePackage, int suffixLen)
+			throws IOException, ClassNotFoundException {
+		List<String> paths = FileUtils.scanPackage(basePackage, CLASS_SUFFIX);
+		if (paths != null) {
+			String className, name;
+			for (int i = 0, size = paths.size(); i < size; i++) {
+				className = paths.get(i);
+				className = className.substring(0, className.length() - suffixLen).replaceAll("/", ".");
+				Class<?> c = Class.forName(className);
+				if (Macro.class.isAssignableFrom(c)) {
+					cn.tenmg.dsl.annotion.Macro macro = c.getAnnotation(cn.tenmg.dsl.annotion.Macro.class);
+					if (macro != null) {
+						name = macro.name();
+						properties.put(StringUtils.isBlank(name) ? c.getSimpleName().toLowerCase() : name, className);
+					}
+				}
+
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+
 	}
 
 }

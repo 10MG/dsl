@@ -4,6 +4,8 @@ import java.util.Map;
 
 import javax.script.ScriptEngine;
 
+import cn.tenmg.dsl.annotion.Macro;
+
 /**
  * else if判断宏
  * 
@@ -11,6 +13,7 @@ import javax.script.ScriptEngine;
  * 
  * @since 1.0.0
  */
+@Macro
 public class ElseIf extends If {
 
 	@Override

@@ -1,7 +1,10 @@
 package cn.tenmg.dsl.utils;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import cn.tenmg.dsl.Macro;
 
@@ -172,14 +175,21 @@ public abstract class MacroUtils {
 			e.printStackTrace();
 			return dsl;
 		}
-		/*
-		 * Object result = null; try { result = macro.excute(logic, context, params); }
-		 * catch (ScriptException e) { return dsl; } if (result == null) { return dsl; }
-		 * else { if (result instanceof Boolean) { if (((Boolean)
-		 * result).booleanValue()) { dsl.delete(0, macroEndIndex + 1); return dsl; }
-		 * else { return new StringBuilder(); } } else { return new
-		 * StringBuilder(result.toString()).append(dsl.delete(0, macroEndIndex + 1)); }
-		 * }
-		 */
+	}
+
+	private static final String CLASS_SUFFIX = ".class";
+
+	public static void main(String[] args) throws IOException, ClassNotFoundException {
+		List<String> classes = FileUtils.scanPackage("cn.tenmg", CLASS_SUFFIX);
+		classes.replaceAll(new UnaryOperator<String>() {
+
+			@Override
+			public String apply(String string) {
+				return string.substring(0, string.length() - CLASS_SUFFIX.length()).replaceAll("/", ".");
+			}
+		});
+		Class<?> c = Class.forName("cn.tenmg.dsl.macro.If");
+		cn.tenmg.dsl.annotion.Macro table = c.getAnnotation(cn.tenmg.dsl.annotion.Macro.class);
+		System.out.println(table);
 	}
 }

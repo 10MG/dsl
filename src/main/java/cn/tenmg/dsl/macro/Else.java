@@ -4,6 +4,8 @@ import java.util.Map;
 
 import javax.script.ScriptEngine;
 
+import cn.tenmg.dsl.annotion.Macro;
+
 /**
  * else判断宏
  * 
@@ -11,6 +13,7 @@ import javax.script.ScriptEngine;
  *
  * @since 1.0.0
  */
+@Macro
 public class Else extends ScriptableMacro {
 
 	@Override
