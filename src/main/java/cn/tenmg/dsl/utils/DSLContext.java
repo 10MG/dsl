@@ -20,7 +20,6 @@ public abstract class DSLContext {
 		try {
 			configProperties = PropertiesLoaderUtils.loadFromClassPath(DEFAULT_STRATEGIES_PATH);
 		} catch (Exception e) {
-			e.printStackTrace();
 			configProperties = new Properties();
 		}
 		try {
