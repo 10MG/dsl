@@ -1,6 +1,8 @@
 package cn.tenmg.dsl.utils;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import cn.tenmg.dsl.Macro;
@@ -14,7 +16,8 @@ import cn.tenmg.dsl.Macro;
  */
 public abstract class MacroUtils {
 
-	private static final String MACRO_KEY_PREFIX = "macro.";
+	private static final String MACRO_KEY_PREFIX = "macro.", CLASS_SUFFIX = ".class",
+			SCAN_PACKAGES_KEY = "scan.packages";
 
 	private static final char
 
@@ -31,7 +34,26 @@ public abstract class MacroUtils {
 	/**
 	 * 宏查找表
 	 */
+	private static final Map<String, String> macros = new HashMap<String, String>();
 	private static final Map<String, Macro> MACROS = new HashMap<String, Macro>();
+
+	static {
+		try {
+			int suffixLen = CLASS_SUFFIX.length();
+			scanMacros("cn.tenmg.dsl.macro", suffixLen);
+			String scanPackages = DSLContext.getProperty(SCAN_PACKAGES_KEY);
+			if (scanPackages != null) {
+				String[] basePackages = scanPackages.split(",");
+				for (int i = 0; i < basePackages.length; i++) {
+					scanMacros(basePackages[i].trim(), suffixLen);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
 
 	private static Macro getMacro(String name) {
 		Macro macro = MACROS.get(name);
@@ -39,17 +61,18 @@ public abstract class MacroUtils {
 			synchronized (MACROS) {
 				macro = MACROS.get(name);
 				if (macro == null) {
-					String key = MACRO_KEY_PREFIX + name, className = DSLContext.getProperty(key);
+					String className = macros.containsKey(name) ? macros.get(name)
+							: DSLContext.getProperty(MACRO_KEY_PREFIX + name);
 					if (StringUtils.isNotBlank(className)) {
 						try {
 							macro = (Macro) Class.forName(className).newInstance();
+							MACROS.put(name, macro);
 						} catch (InstantiationException | IllegalAccessException e) {
 							throw new IllegalArgumentException("Cannot instantiate Macro for name '" + name + "'", e);
 						} catch (ClassNotFoundException e) {
 							throw new IllegalArgumentException("Wrong Macro configuration for name " + name + "'", e);
 						}
 					}
-					MACROS.put(name, macro);
 				}
 			}
 		}
@@ -162,6 +185,25 @@ public abstract class MacroUtils {
 			i++;
 		}
 		return dsl;
+	}
+
+	private static void scanMacros(String basePackage, int suffixLen) throws IOException, ClassNotFoundException {
+		List<String> paths = FileUtils.scanPackage(basePackage, CLASS_SUFFIX);
+		if (paths != null) {
+			String className, name;
+			for (int i = 0, size = paths.size(); i < size; i++) {
+				className = paths.get(i);
+				className = className.substring(0, className.length() - suffixLen).replaceAll("/", ".");
+				Class<?> c = Class.forName(className);
+				if (Macro.class.isAssignableFrom(c)) {
+					cn.tenmg.dsl.annotion.Macro macro = c.getAnnotation(cn.tenmg.dsl.annotion.Macro.class);
+					if (macro != null) {
+						name = macro.name();
+						macros.put(StringUtils.isBlank(name) ? c.getSimpleName().toLowerCase() : name, className);
+					}
+				}
+			}
+		}
 	}
 
 	private static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,

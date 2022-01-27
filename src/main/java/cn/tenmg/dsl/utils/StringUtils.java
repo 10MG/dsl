@@ -630,7 +630,7 @@ public abstract class StringUtils {
 			} else {
 				String items[] = string.split(regex), item = items[0];
 				string = (isUpperCase ? item.substring(0, 1).toUpperCase() : item.substring(0, 1).toLowerCase())
-						.concat(item.substring(1, item.length()));
+						.concat(item.substring(1).toLowerCase());
 				for (int i = 1; i < items.length; i++) {
 					item = items[i];
 					string = string.concat(item.substring(0, 1).toUpperCase()).concat(item.substring(1).toLowerCase());
