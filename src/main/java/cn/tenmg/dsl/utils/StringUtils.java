@@ -625,19 +625,17 @@ public abstract class StringUtils {
 			return string;
 		} else {
 			if (regex == null) {
-				string = string.substring(0, 1).toUpperCase()
-						.concat(string.substring(1, string.length()).toLowerCase());
+				string = (isUpperCase ? string.substring(0, 1).toUpperCase() : string.substring(0, 1).toLowerCase())
+						.concat(string.substring(1));
 			} else {
-				String[] items = string.split(regex);
-				string = "";
-				for (String item : items) {
-					string = string.concat(item.substring(0, 1).toUpperCase())
-							.concat(item.substring(1, item.length()).toLowerCase());
+				String items[] = string.split(regex), item = items[0];
+				string = (isUpperCase ? item.substring(0, 1).toUpperCase() : item.substring(0, 1).toLowerCase())
+						.concat(item.substring(1, item.length()));
+				for (int i = 1; i < items.length; i++) {
+					item = items[i];
+					string = string.concat(item.substring(0, 1).toUpperCase()).concat(item.substring(1).toLowerCase());
 				}
 			}
-		}
-		if (!isUpperCase) {
-			string = string.substring(0, 1).toLowerCase().concat(string.substring(1, string.length()));
 		}
 		return string;
 	}
