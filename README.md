@@ -289,7 +289,7 @@ public class MySimpleMacro implements cn.tenmg.dsl.Macro {
 `comment.multiline`  |  `/*,*/` | 多行注释前缀、后缀，前后缀之间使用“,”分隔，均最多支持2个字符。
 `macro.*`            |          | 宏实现类配置。宏的配置也可使用注解模式来配置。
 
-如果用户想变更实际使用的配置文件，则需要在`dsl-context-loader.properties`中给配置文件相对classpath的具体位置，例如：
+如果用户想变更实际使用的配置文件，则需要在`dsl-context-loader.properties`中给出配置文件相对classpath的具体位置，例如：
 
  **dsl-context-loader.properties** 
 
