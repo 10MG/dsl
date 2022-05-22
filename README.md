@@ -287,7 +287,7 @@ public class MySimpleMacro implements cn.tenmg.dsl.Macro {
 `embed.prefix`       |  `#`     | 嵌入参数前缀，仅支持1个字符。
 `comment.singleline` |  `--,//` | 单行注释前缀，最多2个字符。
 `comment.multiline`  |  `/*,*/` | 多行注释前缀、后缀，前后缀之间使用“,”分隔，均最多支持2个字符。
-`macro.*`            | `macro.if=cn.tenmg.dsl.macro.If`<br>`macro.elseif=cn.tenmg.dsl.macro.ElseIf`<br>`macro.else=cn.tenmg.dsl.macro.Else` | 宏实现类配置。默认的配置分别对应`#[if]`、`#[elseif]`和`#[else]`三个内置的逻辑判断宏。
+`macro.*`            |          | 宏实现类配置。默认的配置分别对应`#[if]`、`#[elseif]`和`#[else]`三个内置的逻辑判断宏。
 
 如果用户想变更实际使用的配置文件，则需要在`dsl-context-loader.properties`中给配置文件相对classpath的具体位置，例如：
 
