@@ -2,7 +2,7 @@
 
 ## 简介
 
-DSL的全称是动态脚本语言（Dynamic Script Language），它是对脚本语言的一种扩展。DSL使用`:`和参数名表示普通参数，使用`#`和参数名表示嵌入式参数，并使用特殊字符`#[]`标记动态片段，当解析时，判断实际传入参数值是否为空（null）或不存在决定是否保留该动态片段，从而达到动态执行不同脚本目的。以此来避免程序员手动拼接繁杂的脚本，使得程序员能从繁杂的业务逻辑中解脱出来。此外，DSL脚本支持宏，来增强脚本的动态逻辑处理能力。
+DSL的全称是动态脚本语言（Dynamic Script Language），它是对脚本语言的一种扩展。DSL使用`:`和参数名表示普通参数，使用`#`和参数名表示嵌入式参数，并使用特殊字符`#[]`标记动态片段，当解析时，判断实际传入参数值是否为空（`null`）或不存在决定是否保留该动态片段，从而达到动态执行不同脚本目的。以此来避免程序员手动拼接繁杂的脚本，使得程序员能从繁杂的业务逻辑中解脱出来。此外，DSL脚本支持宏，来增强脚本的动态逻辑处理能力。
 
 ## 参数
 
@@ -63,7 +63,7 @@ WHERE 1=1
 ```
 有了上述带动态片段的SQL，可以自动根据实际情况生成需要执行的SQL。例如：
 
-1. 参数staffId为空（null），而staffName为非空（非null）时，实际执行的语句为：
+1. 参数staffId为空（`null`），而staffName为非空（非`null`）时，实际执行的语句为：
 
 ```
 SELECT
@@ -73,7 +73,7 @@ SELECT
    AND S.STAFF_NAME LIKE :staffName
 ```
 
-2. 相反，参数staffName为空（null），而staffId为非空（非null）时，实际执行的语句为：
+2. 相反，参数staffName为空（`null`），而staffId为非空（非`null`）时，实际执行的语句为：
 
 ```
 SELECT
@@ -83,7 +83,7 @@ SELECT
    AND S.STAFF_ID = :staffId
 ```
 
-3. 或者，参数staffId、staffName均为空（null）时，实际执行的语句为：
+3. 或者，参数staffId、staffName均为空（`null`）时，实际执行的语句为：
 
 ```
 SELECT
@@ -92,7 +92,7 @@ SELECT
  WHERE 1=1
 ```
 
-4. 最后，参数staffId、staffName均为非空（非null）时，实际执行的语句为：
+4. 最后，参数staffId、staffName均为非空（非`null`）时，实际执行的语句为：
 
 ```
 SELECT
