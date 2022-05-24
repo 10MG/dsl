@@ -209,7 +209,7 @@ public abstract class MacroUtils {
 	private static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
 			Map<String, Object> params, Macro macro, String logic, int macroEndIndex) {
 		try {
-			return macro.excute(logic, dsl.delete(0, macroEndIndex + 1), context, params);
+			return macro.execute(logic, dsl.delete(0, macroEndIndex + 1), context, params);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return dsl;

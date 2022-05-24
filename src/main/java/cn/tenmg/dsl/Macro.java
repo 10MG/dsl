@@ -23,6 +23,6 @@ public interface Macro {
 	 *            宏运行的参数
 	 * @return 返回可执行脚本语言的片段
 	 */
-	StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
+	StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
 			throws Exception;
 }

@@ -24,7 +24,7 @@ public abstract class ScriptableMacro extends AbstractMacro implements Macro {
 	protected static final ScriptEngineManager SCRIPT_ENGINE_MANAGER = new ScriptEngineManager();
 
 	@Override
-	public StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context,
+	public StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context,
 			Map<String, Object> params) throws Exception {
 		ScriptEngine scriptEngine = SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
 		if (params != null && !params.isEmpty()) {

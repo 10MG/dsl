@@ -181,7 +181,7 @@ public interface Macro {
 	 *            宏运行的参数
 	 * @return 返回可执行脚本语言的片段
 	 */
-	StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
+	StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
 			throws Exception;
 }
 ```
@@ -220,10 +220,10 @@ import cn.tenmg.dsl.annotion.Macro;
 public class MySimpleMacro implements cn.tenmg.dsl.Macro {
 
 	@Override
-	public StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context,
+	public StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context,
 			Map<String, Object> params) throws Exception {
-		// TODO Your logic to process dslf or generate a new script fragment used for the actual excute
-		return dslf;// Returns the script fragment used for the actual excute
+		// TODO Your logic to process dslf or generate a new script fragment used for the actual execute
+		return dslf;// Returns the script fragment used for the actual execute
 	}
 
 }
@@ -243,10 +243,10 @@ import cn.tenmg.dsl.annotion.Macro;
 public class MySimpleMacro implements cn.tenmg.dsl.Macro {
 
 	@Override
-	public StringBuilder excute(String logic, StringBuilder dslf, Map<String, Object> context,
+	public StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context,
 			Map<String, Object> params) throws Exception {
-		// TODO Your logic to process dslf or generate a new script fragment used for the actual excute
-		return dslf;// Returns the script fragment used for the actual excute
+		// TODO Your logic to process dslf or generate a new script fragment used for the actual execute
+		return dslf;// Returns the script fragment used for the actual execute
 	}
 
 }
