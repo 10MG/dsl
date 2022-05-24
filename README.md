@@ -4,10 +4,10 @@
     <a href="https://mvnrepository.com/artifact/cn.tenmg/dsl">
         <img alt="maven" src="https://img.shields.io/maven-central/v/cn.tenmg/dsl.svg?style=flat-square">
     </a>
+    <a target="_blank" href="LICENSE"><img src="https://img.shields.io/:license-Apache%202.0-blue.svg"></a>
     <a target="_blank" href='https://gitee.com/tenmg/dsl'>
         <img src="https://gitee.com/tenmg/dsl/badge/star.svg?theme=white" />
     </a>
-    <a target="_blank" href="LICENSE"><img src="https://img.shields.io/:license-Apache%202.0-blue.svg"></a>
 </p>
 
 ## 简介
