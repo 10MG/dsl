@@ -38,6 +38,7 @@ public abstract class PropertiesLoaderUtils {
 		} finally {
 			if (is != null) {
 				is.close();
+				is = null;
 			}
 		}
 		return properties;
