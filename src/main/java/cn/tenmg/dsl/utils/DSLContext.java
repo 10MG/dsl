@@ -14,13 +14,12 @@ public abstract class DSLContext {
 	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context-loader.properties",
 			CONFIG_LOCATION_KEY = "config.location";
 
-	private static Properties configProperties;
+	private static Properties configProperties = new Properties();
 
 	static {
 		try {
 			configProperties = PropertiesLoaderUtils.loadFromClassPath(DEFAULT_STRATEGIES_PATH);
 		} catch (Exception e) {
-			configProperties = new Properties();
 		}
 		try {
 			configProperties.putAll(PropertiesLoaderUtils.loadFromClassPath("dsl-default.properties"));
@@ -29,9 +28,8 @@ public abstract class DSLContext {
 		}
 		try {
 			String configLocation = configProperties.getProperty(CONFIG_LOCATION_KEY, "dsl.properties");
-			configProperties = PropertiesLoaderUtils.loadFromClassPath(configLocation);
+			configProperties.putAll(PropertiesLoaderUtils.loadFromClassPath(configLocation));
 		} catch (Exception e) {
-			configProperties = new Properties();
 		}
 	}
 
@@ -65,7 +63,7 @@ public abstract class DSLContext {
 	 * @return 配置属性值或默认值
 	 */
 	public static String getProperty(String key, String defaultValue) {
-		return configProperties.containsKey(key) ? configProperties.getProperty(key) : defaultValue;
+		return configProperties.getProperty(key, defaultValue);
 	}
 
 }

@@ -707,4 +707,19 @@ public abstract class StringUtils {
 		}
 		return sb.toString();
 	}
+
+	/**
+	 * 拼接字符串
+	 * 
+	 * @param args
+	 *            拼接的对象
+	 * @return 各对象拼接后的字符串
+	 */
+	public static String concat(Object... args) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < args.length; i++) {
+			sb.append(args[i]);
+		}
+		return sb.toString();
+	}
 }
