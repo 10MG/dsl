@@ -29,7 +29,6 @@ public class ObjectUtilsTest {
 		Assertions.assertNull(ObjectUtils.getValue(prince, "yearOfbirth"));
 		Assertions.assertEquals(prince.getAge(), (int) ObjectUtils.getValue(prince, "age"));
 		Assertions.assertEquals(emperor, ObjectUtils.getValue(prince, "parent"));
-
 	}
 
 	@Test
@@ -52,7 +51,6 @@ public class ObjectUtilsTest {
 		Assertions.assertNull(ObjectUtils.getValue(prince, "yearOfbirth"));
 		Assertions.assertEquals(prince.getAge(), (int) ObjectUtils.getValue(prince, "age"));
 		Assertions.assertEquals(emperor, ObjectUtils.getValue(prince, "parent"));
-		
 
 		ObjectUtils.setValue(prince, "yearOfbirth", "-128");
 		Assertions.assertEquals(-128, (int) ObjectUtils.getValue(prince, "yearOfbirth"));
