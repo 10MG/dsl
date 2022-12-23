@@ -11,6 +11,9 @@ import javax.swing.Spring;
  * @since 1.2.0
  */
 public class ClassUtils {
+	
+	private ClassUtils() {
+	}
 	/**
 	 * Return the default ClassLoader to use: typically the thread context
 	 * ClassLoader, if available; the ClassLoader that loaded the ClassUtils class

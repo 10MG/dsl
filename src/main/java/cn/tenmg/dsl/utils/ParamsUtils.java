@@ -39,11 +39,12 @@ public abstract class ParamsUtils {
 				} else {
 					for (int i = 1; i < names.length; i++) {
 						name = names[i];
-						value = ObjectUtils.getValue(value, name);// 获取对象属性
+						value = ObjectUtils.getValueIgnoreException(value, name);// 获取对象属性
 						if (value == null) {// 可能是数组
 							Matcher m = ARRAY_PATTERN.matcher(name);
 							if (m.find()) {// 含有数组访问符“[]”
-								value = ObjectUtils.getValue(value, name.substring(0, name.indexOf("[")));// 获取数组对象
+								value = ObjectUtils.getValueIgnoreException(value,
+										name.substring(0, name.indexOf("[")));// 获取数组对象
 								if (value == null) {// 数组对象为null，返回null
 									return null;
 								} else {// 否则，获取数组的值

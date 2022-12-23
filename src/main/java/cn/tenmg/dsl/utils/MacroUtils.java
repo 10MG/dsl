@@ -55,28 +55,7 @@ public abstract class MacroUtils {
 		}
 	}
 
-	private static Macro getMacro(String name) {
-		Macro macro = MACROS.get(name);
-		if (macro == null) {
-			synchronized (MACROS) {
-				macro = MACROS.get(name);
-				if (macro == null) {
-					String className = macros.containsKey(name) ? macros.get(name)
-							: DSLContext.getProperty(MACRO_KEY_PREFIX + name);
-					if (StringUtils.isNotBlank(className)) {
-						try {
-							macro = (Macro) Class.forName(className).newInstance();
-							MACROS.put(name, macro);
-						} catch (InstantiationException | IllegalAccessException e) {
-							throw new IllegalArgumentException("Cannot instantiate Macro for name '" + name + "'", e);
-						} catch (ClassNotFoundException e) {
-							throw new IllegalArgumentException("Wrong Macro configuration for name " + name + "'", e);
-						}
-					}
-				}
-			}
-		}
-		return macro;
+	private MacroUtils() {
 	}
 
 	public static final StringBuilder execute(StringBuilder dsl, Map<String, Object> context,
@@ -185,6 +164,30 @@ public abstract class MacroUtils {
 			i++;
 		}
 		return dsl;
+	}
+
+	private static Macro getMacro(String name) {
+		Macro macro = MACROS.get(name);
+		if (macro == null) {
+			synchronized (MACROS) {
+				macro = MACROS.get(name);
+				if (macro == null) {
+					String className = macros.containsKey(name) ? macros.get(name)
+							: DSLContext.getProperty(MACRO_KEY_PREFIX + name);
+					if (StringUtils.isNotBlank(className)) {
+						try {
+							macro = (Macro) Class.forName(className).newInstance();
+							MACROS.put(name, macro);
+						} catch (InstantiationException | IllegalAccessException e) {
+							throw new IllegalArgumentException("Cannot instantiate Macro for name '" + name + "'", e);
+						} catch (ClassNotFoundException e) {
+							throw new IllegalArgumentException("Wrong Macro configuration for name " + name + "'", e);
+						}
+					}
+				}
+			}
+		}
+		return macro;
 	}
 
 	private static void scanMacros(String basePackage, int suffixLen) throws IOException, ClassNotFoundException {

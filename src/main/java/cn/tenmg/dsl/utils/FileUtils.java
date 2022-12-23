@@ -27,6 +27,9 @@ public abstract class FileUtils {
 
 	private static final boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("windows");
 
+	private FileUtils() {
+	}
+
 	/**
 	 * 递归扫描指定包及其子包下指定后缀名的文件
 	 * 
