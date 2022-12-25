@@ -1,6 +1,7 @@
 package cn.tenmg.dsl.utils;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,9 +177,10 @@ public abstract class MacroUtils {
 							: DSLContext.getProperty(MACRO_KEY_PREFIX + name);
 					if (StringUtils.isNotBlank(className)) {
 						try {
-							macro = (Macro) Class.forName(className).newInstance();
+							macro = (Macro) Class.forName(className).getDeclaredConstructor().newInstance();
 							MACROS.put(name, macro);
-						} catch (InstantiationException | IllegalAccessException e) {
+						} catch (InstantiationException | IllegalArgumentException | InvocationTargetException
+								| NoSuchMethodException | SecurityException | IllegalAccessException e) {
 							throw new IllegalArgumentException("Cannot instantiate Macro for name '" + name + "'", e);
 						} catch (ClassNotFoundException e) {
 							throw new IllegalArgumentException("Wrong Macro configuration for name " + name + "'", e);

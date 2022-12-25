@@ -60,6 +60,21 @@ public abstract class DSLUtils {
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(String dsl, Map<String, Object> params) {
+		return parse(dsl, null, params);
+	}
+
+	/**
+	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
+	 * 
+	 * @param dsl
+	 *            源DSL脚本
+	 * @param context
+	 *            宏上下文
+	 * @param params
+	 *            参数查找表
+	 * @return 返回NamedScript对象
+	 */
+	public static NamedScript parse(String dsl, Map<String, Object> context, Map<String, Object> params) {
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		if (params == null) {
 			params = new HashMap<String, Object>();
@@ -107,12 +122,12 @@ public abstract class DSLUtils {
 				if (isDynamic && isDynamicEnd(c)) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
 					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
-								false);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
+								contexts, deep, false);
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
-								true);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
+								contexts, deep, true);
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
@@ -166,7 +181,7 @@ public abstract class DSLUtils {
 					if (isParam) {// 处于动态参数区域
 						isParam = false;// 结束动态参数区域
 						String name = paramName.toString();
-						Object value = ParamsUtils.getParam(params, name);
+						Object value = ObjectUtils.getValueIgnoreException(params, name);
 						if (value != null) {
 							validMap.get(deep).add(name);
 							paramName.setLength(0);
@@ -176,7 +191,7 @@ public abstract class DSLUtils {
 					} else if (isEmbed) {
 						isEmbed = false;// 结束动态嵌入式参数区域
 						String name = paramName.toString();
-						Object value = ParamsUtils.getParam(params, name);
+						Object value = ObjectUtils.getValueIgnoreException(params, name);
 						if (value != null) {
 							embedMap.get(deep).add(name);
 							paramName.setLength(0);
@@ -185,12 +200,12 @@ public abstract class DSLUtils {
 						}
 					}
 					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
-								false);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
+								contexts, deep, false);
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, contexts, deep,
-								true);
+						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
+								contexts, deep, true);
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
@@ -212,7 +227,7 @@ public abstract class DSLUtils {
 						} else {// 离开动态参数区域
 							isParam = false;
 							String name = paramName.toString();
-							Object value = ParamsUtils.getParam(params, name);
+							Object value = ObjectUtils.getValueIgnoreException(params, name);
 							if (value != null) {
 								validMap.get(deep).add(name);
 							} else if (deep >= 0) {
@@ -248,7 +263,7 @@ public abstract class DSLUtils {
 						} else {// 离开动态嵌入式参数区域
 							isEmbed = false;
 							String name = paramName.toString();
-							Object value = ParamsUtils.getParam(params, name);
+							Object value = ObjectUtils.getValueIgnoreException(params, name);
 							if (value != null) {
 								embedMap.get(deep).add(name);
 							} else if (deep >= 0) {
@@ -314,12 +329,12 @@ public abstract class DSLUtils {
 							paramName.append(c);
 							if (i == len - 1) {
 								String name = paramName.toString();
-								usedParams.put(name, ParamsUtils.getParam(params, name));
+								usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
 							}
 						} else {// 离开参数区域
 							isParam = false;
 							String name = paramName.toString();
-							usedParams.put(name, ParamsUtils.getParam(params, name));
+							usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
 							if (i < len - 1) {
 								paramName.setLength(0);
 							}
@@ -329,14 +344,14 @@ public abstract class DSLUtils {
 							paramName.append(c);
 							if (i == len - 1) {// 最后一个参数字符
 								script.setLength(script.length() - paramName.length());
-								Object value = ParamsUtils.getParam(params, paramName.toString());
+								Object value = ObjectUtils.getValueIgnoreException(params, paramName.toString());
 								script.append(value == null ? "null" : value.toString());
 								break;
 							}
 						} else {// 离开嵌入式参数区域
 							isEmbed = false;
 							script.setLength(script.length() - paramName.length() - 1);// 需要将#号也删除
-							Object value = ParamsUtils.getParam(params, paramName.toString());
+							Object value = ObjectUtils.getValueIgnoreException(params, paramName.toString());
 							script.append(value == null ? "null" : value.toString());
 							if (i < len - 1) {
 								paramName.setLength(0);
@@ -368,12 +383,29 @@ public abstract class DSLUtils {
 	 * 
 	 * @param dsl
 	 *            源DSL脚本
+	 * @param context
+	 *            宏上下文
+	 * @param params
+	 *            查询参数列表
+	 * @return 返回NamedScript对象
+	 */
+	public static NamedScript parse(String dsl, Object... params) {
+		return parse(dsl, null, params);
+	}
+
+	/**
+	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
+	 * 
+	 * @param dsl
+	 *            源DSL脚本
+	 * @param context
+	 *            宏上下文
 	 * @param params
 	 *            查询参数列表
 	 * @return 返回NamedScript对象
 	 */
 	@SuppressWarnings("unchecked")
-	public static NamedScript parse(String dsl, Object... params) {
+	public static NamedScript parse(String dsl, Map<String, Object> context, Object... params) {
 		Map<String, Object> paramsMap = new HashMap<String, Object>();
 		if (params != null) {
 			if (params.length == 1 && params[0] instanceof Map) {
@@ -384,7 +416,7 @@ public abstract class DSLUtils {
 				}
 			}
 		}
-		return parse(dsl, paramsMap);
+		return parse(dsl, context, paramsMap);
 	}
 
 	/**
@@ -565,6 +597,8 @@ public abstract class DSLUtils {
 	 *            有效参数表
 	 * @param embedMap
 	 *            嵌入式参数表
+	 * @param globalContext
+	 *            全局宏运行上下文
 	 * @param contexts
 	 *            宏运行上下文
 	 * @param deep
@@ -575,11 +609,14 @@ public abstract class DSLUtils {
 	private static final void processDSL(Map<String, Object> params, StringBuilder script,
 			HashMap<Integer, StringBuilder> dslMap, Map<String, Object> usedParams,
 			HashMap<Integer, Boolean> inValidMap, HashMap<Integer, Set<String>> validMap,
-			HashMap<Integer, Set<String>> embedMap, HashMap<Integer, Map<String, Object>> contexts, int deep,
-			boolean emptyWhenNoMacro) {
+			HashMap<Integer, Set<String>> embedMap, Map<String, Object> globalContext,
+			HashMap<Integer, Map<String, Object>> contexts, int deep, boolean emptyWhenNoMacro) {
 		Map<String, Object> context = contexts.get(deep);
 		if (context == null) {
 			context = new HashMap<String, Object>();
+			if (globalContext != null) {
+				context.putAll(globalContext);
+			}
 			contexts.put(deep, context);
 		}
 		StringBuilder dslBuilder = MacroUtils.execute(dslMap.get(deep), context, params, emptyWhenNoMacro);
@@ -590,7 +627,7 @@ public abstract class DSLUtils {
 				String namedScript = dslBuilder.toString();
 				Object value;
 				for (String name : embedMap.get(deep)) {
-					value = ParamsUtils.getParam(params, name);
+					value = ObjectUtils.getValueIgnoreException(params, name);
 					namedScript = namedScript.replaceAll(EMBED_PREFIX + name,
 							value == null ? "null" : value.toString());
 				}
@@ -598,7 +635,7 @@ public abstract class DSLUtils {
 			}
 			for (String name : validMap.get(deep)) {
 				if (!usedParams.containsKey(name) && dslBuilder.indexOf(PARAM_PREFIX + name) >= 0) {
-					usedParams.put(name, ParamsUtils.getParam(params, name));
+					usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
 				}
 			}
 		} else {

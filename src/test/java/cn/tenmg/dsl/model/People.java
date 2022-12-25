@@ -15,7 +15,7 @@ public class People {
 
 	private int age;
 
-	private People parent;
+	private People father;
 
 	public People() {
 		super();
@@ -27,11 +27,11 @@ public class People {
 		this.age = age;
 	}
 
-	public People(String name, int age, People parent) {
+	public People(String name, int age, People father) {
 		super();
 		this.name = name;
 		this.age = age;
-		this.parent = parent;
+		this.father = father;
 	}
 
 	public String getName() {
@@ -66,12 +66,12 @@ public class People {
 		this.age = age;
 	}
 
-	public People getParent() {
-		return parent;
+	public People getFather() {
+		return father;
 	}
 
-	public void setParent(People parent) {
-		this.parent = parent;
+	public void setFather(People father) {
+		this.father = father;
 	}
 
 }

@@ -32,11 +32,11 @@ public class ParamsUtilsTest {
 
 		Assertions.assertEquals(prince.getName(), ParamsUtils.getParam(params, "prince.name"));
 		Assertions.assertEquals(prince.getAge(), (int) ParamsUtils.getParam(params, "prince.age"));
-		Assertions.assertEquals(emperor, ParamsUtils.getParam(params, "prince.parent"));
+		Assertions.assertEquals(emperor, ParamsUtils.getParam(params, "prince.father"));
 
-		Assertions.assertEquals(emperor.getName(), ParamsUtils.getParam(params, "prince.parent.name"));
-		Assertions.assertEquals(emperor.getAge(), (int) ParamsUtils.getParam(params, "prince.parent.age"));
-		Assertions.assertEquals(emperor.getAlias(), ParamsUtils.getParam(params, "prince.parent.alias"));
+		Assertions.assertEquals(emperor.getName(), ParamsUtils.getParam(params, "prince.father.name"));
+		Assertions.assertEquals(emperor.getAge(), (int) ParamsUtils.getParam(params, "prince.father.age"));
+		Assertions.assertEquals(emperor.getAlias(), ParamsUtils.getParam(params, "prince.father.alias"));
 	}
 
 }

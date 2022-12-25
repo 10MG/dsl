@@ -7,13 +7,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 参数工具类
+ * 参数工具类。已废弃，即将在后续版本移除，getParam方法请使用ObjectUtils.getValue或ObjectUtils.getValueIgnoreException方法替换。
  * 
  * @author June wjzhao@aliyun.com
  * 
  * @since 1.2.2
  *
  */
+@Deprecated
 public abstract class ParamsUtils {
 
 	private static final Pattern ARRAY_PATTERN = Pattern.compile("\\[[^\\]]+\\]");

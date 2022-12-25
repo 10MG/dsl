@@ -117,7 +117,7 @@ public abstract class PlaceHolderUtils {
 				defaultValue = StringUtils.concat(PLACEHOLDER_PREFIX[0], PLACEHOLDER_PREFIX[1], key,
 						PLACEHOLDER_SUFFIX);
 			}
-			Object value = ParamsUtils.getParam(params, name);
+			Object value = ObjectUtils.getValueIgnoreException(params, name);
 			if (value == null) {
 				sb.append(defaultValue);
 			} else {
