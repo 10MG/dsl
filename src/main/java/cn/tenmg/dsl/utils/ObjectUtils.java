@@ -2,6 +2,7 @@ package cn.tenmg.dsl.utils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -60,12 +61,11 @@ public abstract class ObjectUtils {
 				} else {
 					for (int i = 1; i < names.length; i++) {
 						attribute = names[i];
-						value = ObjectUtils.getValueIgnoreException(value, attribute);// 获取对象属性
+						value = getValue(value, attribute);// 获取对象属性
 						if (value == null) {// 可能是数组
 							Matcher m = ARRAY_PATTERN.matcher(attribute);
 							if (m.find()) {// 含有数组访问符“[]”
-								value = ObjectUtils.getValueIgnoreException(value,
-										attribute.substring(0, attribute.indexOf("[")));// 获取数组对象
+								value = getValue(value, attribute.substring(0, attribute.indexOf("[")));// 获取数组对象
 								if (value == null) {// 数组对象为null，返回null
 									return null;
 								} else {// 否则，获取数组的值
@@ -106,6 +106,65 @@ public abstract class ObjectUtils {
 	}
 
 	/**
+	 * 获取设置指定对象的指定字段时所需的类型。类型的优先顺序为setter方法的参数类型 > 字段类型。
+	 * 
+	 * @param object
+	 *            指定对象
+	 * @param fieldName
+	 *            指定字段名
+	 * @return 设置指定对象的指定字段时所需的类型
+	 */
+	public static Class<?> getFieldType(Object object, String fieldName) {
+		return getFieldType(object, fieldName, true);
+	}
+
+	/**
+	 * 获取设置指定对象的指定字段时所需的类型。类型的优先顺序为setter方法的参数类型 > 字段类型。
+	 * 
+	 * @param object
+	 *            指定对象
+	 * @param fieldName
+	 *            指定字段名
+	 * @param throwWhenAbsent
+	 *            指定字段不存在是否抛出异常
+	 * @return 设置指定对象的指定字段时所需的类型
+	 */
+	public static Class<?> getFieldType(Object object, String fieldName, boolean throwWhenAbsent) {
+		Class<?> type = object.getClass();
+		String methodName = toMethodName(SET, fieldName);
+		List<Method> methods = getSetMethods(type).get(methodName);
+		if (methods == null) {
+			Field field = getFields(type).get(fieldName);
+			if (field == null) {
+				if (throwWhenAbsent) {
+					throw new IllegalArgumentException(StringUtils.concat("There is no suitable method named ",
+							methodName, " or field named ", fieldName, " in class ", type.getName()));
+				}
+				return null;
+			} else {
+				return field.getType();
+			}
+		} else {
+			int size = methods.size();
+			if (size == 1) {
+				return methods.get(0).getParameterTypes()[0];
+			} else {
+				Field field = getFields(type).get(fieldName);
+				if (field == null) {
+					if (throwWhenAbsent) {
+						throw new IllegalArgumentException(StringUtils.concat("There is no field named ", fieldName,
+								" and more than one set method named ", methodName, " in class ", type.getName(),
+								", we don't know which one to use for getting field type"));
+					}
+					return null;
+				} else {
+					return field.getType();
+				}
+			}
+		}
+	}
+
+	/**
 	 * 根据属性表达式设置指定对象属性的值。属性表达式支持使用“field1.field2”访问属性的属性值，层级数不限，支持使用“[*]”访问数组值，维数不限，“field1.field2”和“[*]”也可以配合使用。如果设置的是孙子属性，则如果孙子的父属性不存在则会默认根据setter方法或者属性类型自动设置父属性后，再设置孙子属性。以此类推。
 	 * 
 	 * @param object
@@ -118,23 +177,11 @@ public abstract class ObjectUtils {
 	 *             发生异常
 	 */
 	public static <T> void setValue(Object object, String attribute, T value) throws Exception {
-		Matcher matcher = ARRAY_END_PATTERN.matcher(attribute);
-		if (matcher.find()) {// 以“[*]”结尾的
-			String group = matcher.group();
-			setValue(object, attribute.substring(0, attribute.length() - group.length()),
-					group.substring(1, group.length() - 1), value);
-		} else {
-			int index = attribute.lastIndexOf(".");
-			if (index > 0) {
-				setValue(object, attribute.substring(0, index), attribute.substring(index + 1), value);
-			} else {
-				setValueInner(object, attribute, value);
-			}
-		}
+		setValue(object, attribute, value, true);
 	}
 
 	/**
-	 * 根据属性表达式设置指定对象属性的值，忽略异常。属性表达式支持使用“field1.field2”访问属性的属性值，层级数不限，支持使用“[*]”访问数组值，维数不限，“field1.field2”和“[*]”也可以配合使用。如果设置的是孙子属性，则如果孙子的父属性不存在则会默认根据setter方法或者属性类型自动设置父属性后，再设置孙子属性。以此类推。
+	 * 根据属性表达式设置指定对象属性的值。属性表达式支持使用“field1.field2”访问属性的属性值，层级数不限，支持使用“[*]”访问数组值，维数不限，“field1.field2”和“[*]”也可以配合使用。如果设置的是孙子属性，则如果孙子的父属性不存在则会默认根据setter方法或者属性类型自动设置父属性后，再设置孙子属性。以此类推。
 	 * 
 	 * @param object
 	 *            指定对象
@@ -142,24 +189,38 @@ public abstract class ObjectUtils {
 	 *            属性表达式
 	 * @param value
 	 *            指定的值
+	 * @param throwWhenAbsent
+	 *            指定属性不存在是否抛出异常
+	 * @throws Exception
+	 *             发生异常
 	 */
-	public static <T> void setValueIgnoreException(Object object, String attribute, T value) {
-		try {
-			setValue(object, attribute, value);
-		} catch (Exception e) {
+	public static <T> void setValue(Object object, String attribute, T value, boolean throwWhenAbsent)
+			throws Exception {
+		Matcher matcher = ARRAY_END_PATTERN.matcher(attribute);
+		if (matcher.find()) {// 以“[*]”结尾的
+			String group = matcher.group();
+			setValue(object, attribute.substring(0, attribute.length() - group.length()),
+					group.substring(1, group.length() - 1), value, throwWhenAbsent);
+		} else {
+			int index = attribute.lastIndexOf(".");
+			if (index > 0) {
+				setValue(object, attribute.substring(0, index), attribute.substring(index + 1), value, throwWhenAbsent);
+			} else {
+				setValueInner(object, attribute, value, throwWhenAbsent);
+			}
 		}
 	}
 
 	/**
-	 * 获取指定对象中的指定成员变量
+	 * 获取指定对象中的指定字段
 	 * 
 	 * @param object
 	 *            指定对象
 	 * @param fieldName
-	 *            指定成员变量
+	 *            指定字段
 	 * @param <T>
 	 *            返回类型
-	 * @return 返回指定成员变量的值
+	 * @return 返回指定字段的值
 	 * @throws Exception
 	 *             发生异常
 	 */
@@ -240,12 +301,12 @@ public abstract class ObjectUtils {
 	 * @return 获取方法（getter）集
 	 */
 	private static Map<String, Method> getGetMethods(Class<?> type) {
-		Map<String, Method> methods = getMethodMap.get(type);
-		if (methods == null) {
+		Map<String, Method> getMethods = getMethodMap.get(type);
+		if (getMethods == null) {
 			synchronized (getMethodMap) {
-				methods = getMethodMap.get(type);
-				if (methods == null) {
-					methods = new HashMap<String, Method>(128);
+				getMethods = getMethodMap.get(type);
+				if (getMethods == null) {
+					getMethods = new HashMap<String, Method>(128);
 					Method[] mthds = type.getMethods();
 					String name;
 					for (int i = 0, count; i < mthds.length; i++) {
@@ -253,14 +314,14 @@ public abstract class ObjectUtils {
 						name = method.getName();
 						count = method.getParameterCount();
 						if (count == 0 && name.startsWith("get")) {
-							methods.put(name, method);
+							getMethods.put(name, method);
 						}
 					}
-					getMethodMap.put(type, methods);
+					getMethodMap.put(type, getMethods);
 				}
 			}
 		}
-		return methods;
+		return getMethods;
 	}
 
 	/**
@@ -301,11 +362,11 @@ public abstract class ObjectUtils {
 	}
 
 	/**
-	 * 获取指定对象指定属性的最佳匹配设置方法（setter）
+	 * 获取指定类型指定字段的最佳匹配设置方法（setter）
 	 * 
-	 * @param object
-	 *            指定对象
-	 * @param methods
+	 * @param type
+	 *            指定类型
+	 * @param setMethods
 	 *            对象设置方法（setter）集
 	 * @param methodName
 	 *            设置方法名
@@ -313,9 +374,7 @@ public abstract class ObjectUtils {
 	 *            设置的值
 	 * @return 最佳匹配设置方法（setter）
 	 */
-	private static <T> Method getSetMethod(Object object, List<Method> methods, String methodName, T value) {
-		Method method = null;
-		Class<?> type = object.getClass(), valueType = value.getClass();
+	private static <T> Method getBestSetMethod(Class<?> type, List<Method> setMethods, String methodName, T value) {
 		Map<String, Method> bestSetMethods = bestSetMethodMap.get(type);
 		if (bestSetMethods == null) {
 			synchronized (bestSetMethodMap) {
@@ -324,36 +383,61 @@ public abstract class ObjectUtils {
 					bestSetMethods = new HashMap<String, Method>(128);
 					bestSetMethodMap.put(type, bestSetMethods);
 				}
-				String bestKey = String.join(METHOD_RETURNTYPE_SPLITOR, methodName, valueType.getName());
-				if (bestSetMethods.containsKey(bestKey)) {
-					method = bestSetMethods.get(bestKey);
-				} else {
-					method = null;
-					Method curMethod;
-					Class<?> parameterType;
-					for (int i = 0, minGeneration = Integer.MAX_VALUE, generation, size = methods
-							.size(); i < size; i++) {
-						curMethod = methods.get(i);
-						parameterType = curMethod.getParameterTypes()[0];
-						if (parameterType.equals(valueType)) {
-							method = curMethod;
-							break;
-						} else if (parameterType.isAssignableFrom(valueType)) {
-							generation = 1;
-							while (!parameterType.equals(valueType)) {
-								valueType = valueType.getSuperclass();
-								generation++;
-							}
-							if (generation < minGeneration) {
-								method = curMethod;
-							}
-						}
-					}
-					bestSetMethods.put(bestKey, method);
-				}
+				return getBestSetMethod(bestSetMethods, setMethods, methodName, value);
+			}
+		} else {
+			synchronized (bestSetMethods) {
+				return getBestSetMethod(bestSetMethods, setMethods, methodName, value);
 			}
 		}
-		return method;
+	}
+
+	private static <T> Method getBestSetMethod(Map<String, Method> bestSetMethods, List<Method> setMethods,
+			String methodName, T value) {
+		Method bestSetMethod = null;
+		if (value == null) {
+			if (bestSetMethods.containsKey(methodName)) {
+				bestSetMethod = bestSetMethods.get(methodName);
+			} else {
+				Method curMethod;
+				for (int i = 0, size = setMethods.size(); i < size; i++) {
+					curMethod = setMethods.get(i);
+					if (Object.class.isAssignableFrom(curMethod.getParameterTypes()[0])) {
+						bestSetMethod = curMethod;
+					}
+				}
+				bestSetMethods.put(methodName, bestSetMethod);
+			}
+		} else {
+			Class<?> valueType = value.getClass();
+			String bestKey = String.join(METHOD_RETURNTYPE_SPLITOR, methodName, valueType.getName());
+			if (bestSetMethods.containsKey(bestKey)) {
+				bestSetMethod = bestSetMethods.get(bestKey);
+			} else {
+				Method curMethod;
+				Class<?> parameterType;
+				for (int i = 0, minGeneration = Integer.MAX_VALUE, generation, size = setMethods
+						.size(); i < size; i++) {
+					curMethod = setMethods.get(i);
+					parameterType = curMethod.getParameterTypes()[0];
+					if (parameterType.equals(valueType)) {
+						bestSetMethod = curMethod;
+						break;
+					} else if (parameterType.isAssignableFrom(valueType)) {
+						generation = 1;
+						while (!parameterType.equals(valueType)) {
+							valueType = valueType.getSuperclass();
+							generation++;
+						}
+						if (generation < minGeneration) {
+							bestSetMethod = curMethod;
+						}
+					}
+				}
+				bestSetMethods.put(bestKey, bestSetMethod);
+			}
+		}
+		return bestSetMethod;
 	}
 
 	/**
@@ -374,7 +458,7 @@ public abstract class ObjectUtils {
 						Field[] declaredFields = type.getDeclaredFields();
 						for (int i = 0; i < declaredFields.length; i++) {
 							Field field = declaredFields[i];
-							if (!field.isAccessible()) {
+							if (!field.isAccessible() && !Modifier.isFinal(field.getModifiers())) {
 								field.setAccessible(true);
 							}
 							fields.put(field.getName(), field);
@@ -465,10 +549,10 @@ public abstract class ObjectUtils {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static <T> void setValue(Object object, String parentAttribute, String attribute, T value)
-			throws Exception {
+	private static <T> void setValue(Object object, String parentAttribute, String attribute, T value,
+			boolean throwWhenAbsent) throws Exception {
 		if (StringUtils.isBlank(parentAttribute)) {
-			setValueInner(object, attribute, value);
+			setValueInner(object, attribute, value, throwWhenAbsent);
 		} else {
 			Object parent = getValue(object, parentAttribute);
 			if (parent == null) {
@@ -526,83 +610,32 @@ public abstract class ObjectUtils {
 						}
 					}
 				} else {
-					parent = getParent(object, parentAttribute);
-					setValueInner(parent, attribute, value);
+					parent = getParent(object, parentAttribute, throwWhenAbsent);
+					setValueInner(parent, attribute, value, throwWhenAbsent);
 				}
 			} else {
-				setValueInner(parent, attribute, value);
+				setValueInner(parent, attribute, value, throwWhenAbsent);
 			}
-		}
-	}
-
-	private static Object getParent(Object object, String attribute) throws Exception {
-		Object parent = object;
-		Matcher matcher = ARRAY_END_PATTERN.matcher(attribute);
-		if (matcher.find()) {// 以“[*]”结尾的
-			String group = matcher.group();
-			parent = getParent(object, attribute.substring(0, attribute.length() - group.length()),
-					group.substring(1, group.length() - 1));
-		} else {
-			int index = attribute.lastIndexOf(".");
-			if (index > 0) {
-				parent = getParent(object, attribute.substring(0, index), attribute.substring(index + 1));
-			}
-		}
-		return parent;
-	}
-
-	private static Object getParent(Object object, String parentAttribute, String attribute) throws Exception {
-		if (StringUtils.isBlank(parentAttribute)) {
-			return object;
-		} else {
-			Object parent = getValue(object, parentAttribute);
-			if (parent == null) {
-				parent = getParent(object, parentAttribute);
-				setValueInner(object, attribute, parent);
-			} else {
-				Class<?> type = parent.getClass();
-				List<Method> setMethods = getSetMethods(type).get(toMethodName(SET, attribute));
-				if (setMethods == null) {
-					Field field = getFields(type).get(attribute);
-					if (field == null) {
-						throw new IllegalArgumentException(
-								"There is no setter or field named " + attribute + " in class " + type.getName());
-					} else {
-						Object grandparent = parent;
-						parent = field.getType().getConstructor().newInstance();
-						setValueInner(grandparent, attribute, parent);
-					}
-				} else {
-					int count = setMethods.size();
-					if (count == 1) {
-						Object grandparent = parent;
-						parent = setMethods.get(0).getParameterTypes()[0].getConstructor().newInstance();
-						setValueInner(grandparent, attribute, parent);
-					} else {
-						throw new IllegalArgumentException(
-								"There is " + count + " setters for field " + attribute + " in class " + type.getName()
-										+ ", we don't know which one to use to instance " + parentAttribute);
-					}
-				}
-			}
-			return parent;
 		}
 	}
 
 	/**
-	 * 设置指定对象中的指定成员变量的值。
+	 * 设置指定对象中的指定字段的值。
 	 * 
 	 * @param object
 	 *            指定对象
 	 * @param fieldName
-	 *            指定成员变量
+	 *            指定字段
 	 * @param value
 	 *            指定的值
+	 * @param throwWhenAbsent
+	 *            指定字段不存在则抛出异常
 	 * @throws Exception
 	 *             发生异常
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static <T> void setValueInner(Object object, String fieldName, T value) throws Exception {
+	private static <T> void setValueInner(Object object, String fieldName, T value, boolean throwWhenAbsent)
+			throws Exception {
 		if (object instanceof Map) {
 			((Map) object).put(fieldName, value);
 		} else {
@@ -612,22 +645,27 @@ public abstract class ObjectUtils {
 			if (methods == null) {
 				Field field = getFields(type).get(fieldName);
 				if (field == null) {
-					throw new IllegalArgumentException(
-							"There is no setter or field named " + fieldName + " in class " + type.getName());
+					if (throwWhenAbsent) {
+						throw new IllegalArgumentException(StringUtils.concat("There is no suitable method named ",
+								methodName, " or field named ", fieldName, " in class ", type.getName()));
+					}
 				} else {
 					field.set(object, value);
 				}
 			} else {
 				int size = methods.size();
-				if (size == 1 || value == null) {
+				if (size == 1) {
 					methods.get(0).invoke(object, value);
 				} else {
-					Method method = getSetMethod(object, methods, methodName, value);
+					Method method = getBestSetMethod(type, methods, methodName, value);
 					if (method == null) {
 						Field field = getFields(type).get(fieldName);
 						if (field == null) {
-							throw new IllegalArgumentException(
-									"There is no setter or field named " + fieldName + " in class " + type.getName());
+							if (throwWhenAbsent) {
+								throw new IllegalArgumentException(
+										StringUtils.concat("There is no suitable method named ", methodName,
+												" or field named ", fieldName, " in class ", type.getName()));
+							}
 						} else {
 							field.set(object, value);
 						}
@@ -636,6 +674,65 @@ public abstract class ObjectUtils {
 					}
 				}
 			}
+		}
+	}
+
+	private static Object getParent(Object object, String attribute, boolean throwWhenAbsent) throws Exception {
+		Object parent = object;
+		Matcher matcher = ARRAY_END_PATTERN.matcher(attribute);
+		if (matcher.find()) {// 以“[*]”结尾的
+			String group = matcher.group();
+			parent = getParent(object, attribute.substring(0, attribute.length() - group.length()),
+					group.substring(1, group.length() - 1), throwWhenAbsent);
+		} else {
+			int index = attribute.lastIndexOf(".");
+			if (index > 0) {
+				parent = getParent(object, attribute.substring(0, index), attribute.substring(index + 1),
+						throwWhenAbsent);
+			}
+		}
+		return parent;
+	}
+
+	private static Object getParent(Object object, String parentAttribute, String attribute, boolean throwWhenAbsent)
+			throws Exception {
+		if (StringUtils.isBlank(parentAttribute)) {
+			return object;
+		} else {
+			Object parent = getValue(object, parentAttribute);
+			if (parent == null) {
+				parent = getParent(object, parentAttribute, throwWhenAbsent);
+				setValueInner(object, attribute, parent, throwWhenAbsent);
+			} else {
+				Class<?> type = parent.getClass();
+				String methodName = toMethodName(SET, attribute);
+				List<Method> setMethods = getSetMethods(type).get(methodName);
+				if (setMethods == null) {
+					Field field = getFields(type).get(attribute);
+					if (field == null) {
+						if (throwWhenAbsent) {
+							throw new IllegalArgumentException(StringUtils.concat("There is no set method named ",
+									methodName, " or field named ", attribute, " in class ", type.getName()));
+						}
+					} else {
+						Object grandparent = parent;
+						parent = field.getType().getConstructor().newInstance();
+						setValueInner(grandparent, attribute, parent, throwWhenAbsent);
+					}
+				} else {
+					int count = setMethods.size();
+					if (count == 1) {
+						Object grandparent = parent;
+						parent = setMethods.get(0).getParameterTypes()[0].getConstructor().newInstance();
+						setValueInner(grandparent, attribute, parent, throwWhenAbsent);
+					} else {
+						throw new IllegalArgumentException(StringUtils.concat("Due to the feild ", attribute,
+								" is null and there is ", count, " set methods named ", methodName, " for it in class ",
+								type.getName(), ", we don't know which one to use for instantiation"));
+					}
+				}
+			}
+			return parent;
 		}
 	}
 
