@@ -549,7 +549,7 @@ public abstract class ObjectUtils {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static <T> void setValue(Object object, String parentAttribute, String attribute, T value,
+	private static void setValue(Object object, String parentAttribute, String attribute, Object value,
 			boolean throwWhenAbsent) throws Exception {
 		if (StringUtils.isBlank(parentAttribute)) {
 			setValueInner(object, attribute, value, throwWhenAbsent);
@@ -634,7 +634,7 @@ public abstract class ObjectUtils {
 	 *             发生异常
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static <T> void setValueInner(Object object, String fieldName, T value, boolean throwWhenAbsent)
+	private static void setValueInner(Object object, String fieldName, Object value, boolean throwWhenAbsent)
 			throws Exception {
 		if (object instanceof Map) {
 			((Map) object).put(fieldName, value);

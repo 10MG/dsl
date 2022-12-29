@@ -383,8 +383,6 @@ public abstract class DSLUtils {
 	 * 
 	 * @param dsl
 	 *            源DSL脚本
-	 * @param context
-	 *            宏上下文
 	 * @param params
 	 *            查询参数列表
 	 * @return 返回NamedScript对象
