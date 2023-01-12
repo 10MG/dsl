@@ -178,34 +178,38 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
 
 ```
 public interface Macro {
+
 	/**
-	 * 执行宏并返回计算结果
+	 * 执行宏并解析DSL动态片段。如果返回结果为{@code true}，则DSL解析立即终止，并以当前宏解析DSL动态片段的结果为DSL解析的最终结果；否则，将当前宏解析的DSL片段结果拼接到DSL的主解析结果中，并继续后续解析。
 	 * 
+	 * @param context
+	 *            DSL上下文
+	 * @param attributes
+	 *            属性表。由当前层已运行的宏所存储，供本层后续执行的宏使用
 	 * @param logic
-	 *            宏逻辑代码
+	 *            逻辑代码
 	 * @param dslf
 	 *            DSL动态片段
-	 * @param context
-	 *            宏运行的上下文
 	 * @param params
 	 *            宏运行的参数
-	 * @return 返回可执行脚本语言的片段
+	 * @return 如果返回结果为{@code true}，则DSL解析立即终止，并以当前宏解析DSL动态片段的结果为DSL解析的最终结果；否则，将当前宏解析的DSL片段结果拼接到DSL的主解析结果中，并继续后续解析。
 	 */
-	StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context, Map<String, Object> params)
-			throws Exception;
+	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
+			Map<String, Object> params) throws Exception;
 }
 ```
 
 接口参数说明：
 
-参数      | 含义           | 说明
-----------|---------------|--------------------------------
-`logic`   | 宏逻辑代码     | 宏名称之后`(`和`)`之间的部分代码，如`if`/`elseif`宏的判断逻辑
-`dslf`    | DSL动态片段    | 宏包裹的部分代码（除去宏名称、括号和宏逻辑代码的部分）
-`context` | 宏运行的上下文 | 可以用于存储宏的上下文环境，以辅助后续的宏处理。例如`if`[`elseif`]`else`宏就需要存储上一个判断的结果，以辅助后续的判断。
-`params`  | 宏运行的参数   | 传入DSL解析的参数查找表。
+参数         | 含义           | 说明
+-------------|---------------|--------------------------------
+`context`    | DSL上下文      | DSL解析运行的上下文，默认为一个空的 `DefaultDSLContext` ，可在解析阶段传入自己的上下文。
+`attributes` | 属性表         | 由当前层已运行的宏所存储，供本层后续执行的宏使用。例如`if`[`elseif`]`else`宏就需要存储上一个判断的结果，以辅助后续的判断。
+`logic`      | 宏逻辑代码     | 宏名称之后`(`和`)`之间的部分代码，如`if`/`elseif`宏的判断逻辑
+`dslf`       | DSL动态片段    | 除去宏名称、括号和宏逻辑代码的部分，宏包裹的剩余部分代码
+`params`     | 宏运行的参数   | 当前宏所用到的参数查找表。
 
-1.2.4版本开始，支持两种方式注入宏：一种是使用`@Macro`注解和配置文件中的扫描包名配置实现的注解扫描模式，另一种是直接通过配置文件指定宏的实现类名的配置类名模式。推荐使用注解扫描模式，因为使用起来更加灵活，避免反复修改配置文件。
+1.2.4版本开始，支持两种方式注入宏：一种是使用`@Macro`注解和配置文件中的扫描包名配置实现的注解扫描模式，另一种是直接通过配置文件指定宏的实现类名的配置类名模式。推荐使用注解扫描模式，因为使用起来更加灵活，避免反复修改配置文件。1.3.0版本开始，增加 Java 原生服务加载方式扩展宏的实现。
 
 ### 注解扫描模式
 
@@ -226,14 +230,14 @@ import java.util.Map;
 
 import cn.tenmg.dsl.annotion.Macro;
 
-@Macro(name = "MySimpleMacro")
-public class MySimpleMacro implements cn.tenmg.dsl.Macro {
+@Macro(name = "MyMacroName")
+public class MyMacro implements cn.tenmg.dsl.Macro {
 
 	@Override
-	public StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context,
-			Map<String, Object> params) throws Exception {
-		// TODO Your logic to process dslf or generate a new script fragment used for the actual execute
-		return dslf;// Returns the script fragment used for the actual execute
+	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
+			Map<String, Object> params) throws Exception
+		// TODO Your logic to process dslf to an actual running script
+		return false;// Returns false, indicating that the processed script is only part of the actual running script
 	}
 
 }
@@ -241,7 +245,7 @@ public class MySimpleMacro implements cn.tenmg.dsl.Macro {
 
 ### 配置类名模式
 
-除了可以通过注解扫描来注入宏之外，还可以通过配置文件中直接指定宏的实现类名来扩展或重写宏，例如有如下没有注解的宏实现类，可以在配置文件中直接配置`macro.myLogicalMacro=mypackage.MyLogicalMacro`使之生效：
+除了可以通过注解扫描来注入宏之外，还可以通过配置文件中直接指定宏的实现类名来扩展或重写宏。例如，可以在配置文件中直接配置`macro.MyMacroName=mypackage.MyMacro`使以下宏生效：
 
 ```
 package mypackage;
@@ -250,17 +254,33 @@ import java.util.Map;
 
 import cn.tenmg.dsl.annotion.Macro;
 
-public class MySimpleMacro implements cn.tenmg.dsl.Macro {
+public class MyMacro implements cn.tenmg.dsl.Macro {
 
 	@Override
-	public StringBuilder execute(String logic, StringBuilder dslf, Map<String, Object> context,
-			Map<String, Object> params) throws Exception {
-		// TODO Your logic to process dslf or generate a new script fragment used for the actual execute
-		return dslf;// Returns the script fragment used for the actual execute
+	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
+			Map<String, Object> params) throws Exception
+		// TODO Your logic to process dslf to an actual running script
+		return false;// Returns false, indicating that the processed script is only part of the actual running script
 	}
 
 }
 ```
+
+### 服务加载模式
+
+此外，还可以通过 Java 原生服务加载方式扩展宏的实现，且同样支持使用注解自定义宏名称。仅需在类路径（classpath）下创建 META-INF/services/cn.tenmg.dsl.Macro文件并在文件内填写类名即可，多个类使用换行分隔。 例如，Maven 项目的结构如下：
+
+```
+resources
+    └─META-INF
+        └─services
+             └─cn.tenmg.dsl.Macro
+```
+
+```
+mypackage.MyMacro
+```
+
 
 ## 使用注释
 
