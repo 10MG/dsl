@@ -37,6 +37,10 @@ public class DefaultDSLContext implements DSLContext {
 		this.paramsFilters = paramsFilters;
 	}
 
+	public DefaultDSLContext() {
+		super();
+	}
+
 	public DefaultDSLContext(List<ParamsConverter<?>> paramsConverters, List<ParamsFilter> paramsFilters) {
 		super();
 		this.paramsConverters = paramsConverters;

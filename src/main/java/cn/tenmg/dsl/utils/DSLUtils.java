@@ -13,6 +13,7 @@ import cn.tenmg.dsl.ParamsConverter;
 import cn.tenmg.dsl.ParamsFilter;
 import cn.tenmg.dsl.ParamsParser;
 import cn.tenmg.dsl.Script;
+import cn.tenmg.dsl.context.DefaultDSLContext;
 import cn.tenmg.dsl.utils.MacroUtils.Dslf;
 
 /**
@@ -27,6 +28,8 @@ public abstract class DSLUtils {
 	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', COMMA = ',',
 			PARAM_MARK = '?', DYNAMIC_PREFIX[], DYNAMIC_SUFFIX, PARAM_PREFIX, EMBED_PREFIX, LINE_BREAK = '\n',
 			SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_SUFFIXES[][];
+
+	private static DefaultDSLContext defaultDSLContext = new DefaultDSLContext();
 
 	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', '\n');
 
@@ -64,7 +67,7 @@ public abstract class DSLUtils {
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(String dsl, Object... params) {
-		return parse(null, dsl, params);
+		return parse(defaultDSLContext, dsl, params);
 	}
 
 	/**
@@ -77,7 +80,7 @@ public abstract class DSLUtils {
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(String dsl, Object params) {
-		return parse(null, dsl, params);
+		return parse(defaultDSLContext, dsl, params);
 	}
 
 	/**
@@ -813,23 +816,19 @@ public abstract class DSLUtils {
 	}
 
 	private static ParamGetter getParamGetter(DSLContext context) {
-		if (context == null) {
-			return SimpleParamGetter.getInstance();
-		} else {
-			List<ParamsConverter<?>> paramsConverters = context.getParamsConverters();
-			List<ParamsFilter> paramsFilters = context.getParamsFilters();
-			if (isEmpty(paramsConverters)) {
-				if (isEmpty(paramsFilters)) {
-					return SimpleParamGetter.getInstance();
-				} else {
-					return new FilterAbleParamGetter(paramsFilters);
-				}
+		List<ParamsConverter<?>> paramsConverters = context.getParamsConverters();
+		List<ParamsFilter> paramsFilters = context.getParamsFilters();
+		if (isEmpty(paramsConverters)) {
+			if (isEmpty(paramsFilters)) {
+				return SimpleParamGetter.getInstance();
 			} else {
-				if (isEmpty(paramsFilters)) {
-					return new ConvertAbleParamGetter(paramsConverters);
-				} else {
-					return new FullFeaturesParamGetter(paramsConverters, paramsFilters);
-				}
+				return new FilterAbleParamGetter(paramsFilters);
+			}
+		} else {
+			if (isEmpty(paramsFilters)) {
+				return new ConvertAbleParamGetter(paramsConverters);
+			} else {
+				return new FullFeaturesParamGetter(paramsConverters, paramsFilters);
 			}
 		}
 	}
