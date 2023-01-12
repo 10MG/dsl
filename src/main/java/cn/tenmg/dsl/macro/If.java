@@ -4,7 +4,7 @@ import java.util.Map;
 
 import javax.script.ScriptEngine;
 
-import cn.tenmg.dsl.annotion.Macro;
+import cn.tenmg.dsl.DSLContext;
 
 /**
  * if判断宏
@@ -13,15 +13,16 @@ import cn.tenmg.dsl.annotion.Macro;
  *
  * @since 1.0.0
  */
-@Macro
 public class If extends ScriptableMacro {
-
+	
 	@Override
-	StringBuilder excute(ScriptEngine scriptEngine, String logic, StringBuilder dslf, Map<String, Object> context)
-			throws Exception {
-		Object result = scriptEngine.eval(logic);
-		context.put("if", result);
-		return Boolean.TRUE.equals(result) ? dslf : emptyStringBuilder();
+	boolean excute(ScriptEngine scriptEngine, DSLContext context, Map<String, Object> attributes, String logic,
+			StringBuilder dslf) throws Exception {
+		Object result = scriptEngine.eval(toExecutable(logic));
+		attributes.put("if", result);
+		if (!Boolean.TRUE.equals(result)) {
+			dslf.setLength(0);
+		}
+		return false;
 	}
-
 }

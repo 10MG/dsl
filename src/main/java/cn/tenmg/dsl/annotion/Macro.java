@@ -23,4 +23,6 @@ public @interface Macro {
 	 * 默认为类名的小写格式。例如ElseIf类的默认名称为elseif
 	 */
 	String name() default "";
+
+	String value() default "";
 }

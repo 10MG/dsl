@@ -16,6 +16,7 @@ import cn.tenmg.dsl.model.People;
  *
  * @since 1.2.10
  */
+@Deprecated
 public class ParamsUtilsTest {
 
 	@Test

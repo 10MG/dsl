@@ -46,16 +46,8 @@ public class NamedScript implements Serializable {
 		return script;
 	}
 
-	public void setScript(String script) {
-		this.script = script;
-	}
-
 	public Map<String, Object> getParams() {
 		return params;
-	}
-
-	public void setParams(Map<String, Object> params) {
-		this.params = params;
 	}
 
 }

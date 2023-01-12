@@ -716,6 +716,33 @@ public abstract class StringUtils {
 	 * @return 各对象拼接后的字符串
 	 */
 	public static String concat(Object... args) {
+		return concatInner(args);
+	}
+
+	/**
+	 * 拼接字符串
+	 * 
+	 * @param args
+	 *            拼接的字符串
+	 * @return 各对象拼接后的字符串
+	 */
+	public static String concat(String... args) {
+		return concatInner(args);
+	}
+
+	/**
+	 * 拼接字符串
+	 * 
+	 * @param args
+	 *            拼接的字符序列
+	 * @return 各对象拼接后的字符串
+	 */
+	public static String concat(CharSequence... args) {
+		return concatInner(args);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T extends Object> String concatInner(T... args) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < args.length; i++) {
 			sb.append(args[i]);

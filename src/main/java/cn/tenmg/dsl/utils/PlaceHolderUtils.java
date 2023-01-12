@@ -29,11 +29,14 @@ public abstract class PlaceHolderUtils {
 	 * @return 返回将模板字符串中占位符替换为指定的参数后的字符串
 	 */
 	public static String replace(String tpl, CharSequence... params) {
-		Map<CharSequence, CharSequence> map = new HashMap<CharSequence, CharSequence>();
+		Map<CharSequence, CharSequence> map;
 		if (params != null) {
+			map = new HashMap<CharSequence, CharSequence>(params.length / 2);
 			for (int i = 0; i < params.length; i += 2) {
 				map.put(params[i], params[i + 1]);
 			}
+		} else {
+			map = new HashMap<CharSequence, CharSequence>();
 		}
 		return replace(tpl, map);
 	}

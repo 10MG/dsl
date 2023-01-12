@@ -5,15 +5,15 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
- * DSL上下文
+ * 动态脚本语言配置工具类
  * 
  * @author June wjzhao@aliyun.com
  * 
- * @since 1.2.3
+ * @since 1.3.0
  */
-public abstract class DSLContext {
+public abstract class ConfigUtils {
 
-	private static final String DEFAULT_STRATEGIES_PATH = "dsl-context-loader.properties",
+	private static final String DEFAULT_STRATEGIES_PATH = "dsl-config-loader.properties",
 			CONFIG_LOCATION_KEY = "config.location";
 
 	private static Properties configProperties = new Properties();
@@ -23,16 +23,7 @@ public abstract class DSLContext {
 		replacePlaceHolder();
 	}
 
-	private DSLContext() {
-	}
-
-	/**
-	 * 获取配置文件所在位置
-	 * 
-	 * @return 配置文件所在位置
-	 */
-	public static String getConfigLocation() {
-		return getProperty(DSLContext.CONFIG_LOCATION_KEY);
+	private ConfigUtils() {
 	}
 
 	/**
@@ -63,20 +54,10 @@ public abstract class DSLContext {
 	 * 加载配置
 	 */
 	private static void loadConfig() {
-		try {
-			configProperties.putAll(PropertiesLoaderUtils.loadFromClassPath(DEFAULT_STRATEGIES_PATH));
-		} catch (Exception e) {
-		}
-		try {
-			configProperties.putAll(PropertiesLoaderUtils.loadFromClassPath("dsl-default.properties"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		try {
-			configProperties.putAll(PropertiesLoaderUtils
-					.loadFromClassPath(configProperties.getProperty(CONFIG_LOCATION_KEY, "dsl.properties")));
-		} catch (Exception e) {
-		}
+		PropertiesLoaderUtils.loadIgnoreException(configProperties, DEFAULT_STRATEGIES_PATH);
+		PropertiesLoaderUtils.loadIgnoreException(configProperties, "dsl-default.properties");
+		PropertiesLoaderUtils.loadIgnoreException(configProperties,
+				configProperties.getProperty(CONFIG_LOCATION_KEY, "dsl.properties"));
 	}
 
 	/**

@@ -1,13 +1,19 @@
 package cn.tenmg.dsl.utils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cn.tenmg.dsl.DSLContext;
 import cn.tenmg.dsl.NamedScript;
+import cn.tenmg.dsl.ParamsConverter;
+import cn.tenmg.dsl.ParamsFilter;
 import cn.tenmg.dsl.ParamsParser;
 import cn.tenmg.dsl.Script;
+import cn.tenmg.dsl.utils.MacroUtils.Dslf;
 
 /**
  * 动态脚本语言(DSL)工具类
@@ -19,20 +25,18 @@ import cn.tenmg.dsl.Script;
 public abstract class DSLUtils {
 
 	public static final char SINGLE_QUOTATION_MARK = '\'', BACKSLASH = '\\', BLANK_SPACE = '\u0020', COMMA = ',',
-			PARAM_MARK = '?';
-
-	private static final char DYNAMIC_PREFIX[], DYNAMIC_SUFFIX, PARAM_PREFIX, EMBED_PREFIX, LINE_BREAK = '\n',
+			PARAM_MARK = '?', DYNAMIC_PREFIX[], DYNAMIC_SUFFIX, PARAM_PREFIX, EMBED_PREFIX, LINE_BREAK = '\n',
 			SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_SUFFIXES[][];
 
-	private static final String LINE_SPLITOR = "\r\n", EMPTY_CHARS = LINE_SPLITOR + "\t ";
+	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', '\n');
 
 	static {
-		DYNAMIC_PREFIX = DSLContext.getProperty("dynamic.prefix", "#[").toCharArray();
-		DYNAMIC_SUFFIX = DSLContext.getProperty("dynamic.suffix", "]").charAt(0);
-		PARAM_PREFIX = DSLContext.getProperty("param.prefix", ":").charAt(0);
-		EMBED_PREFIX = DSLContext.getProperty("embed.prefix", "#").charAt(0);
-		String[] singlelineCommentPrefixes = DSLContext.getProperty("comment.singleline", "--").split(","),
-				miltilineComments = DSLContext.getProperty("comment.multiline", "/*,*/").split(";");
+		DYNAMIC_PREFIX = ConfigUtils.getProperty("dynamic.prefix", "#[").toCharArray();
+		DYNAMIC_SUFFIX = ConfigUtils.getProperty("dynamic.suffix", "]").charAt(0);
+		PARAM_PREFIX = ConfigUtils.getProperty("param.prefix", ":").charAt(0);
+		EMBED_PREFIX = ConfigUtils.getProperty("embed.prefix", "#").charAt(0);
+		String[] singlelineCommentPrefixes = ConfigUtils.getProperty("comment.singleline", "--").split(","),
+				miltilineComments = ConfigUtils.getProperty("comment.multiline", "/*,*/").split(";");
 		SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
 		MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
 		MILTILINE_COMMENT_SUFFIXES = new char[miltilineComments.length][];
@@ -56,38 +60,81 @@ public abstract class DSLUtils {
 	 * @param dsl
 	 *            源DSL脚本
 	 * @param params
+	 *            查询参数列表
+	 * @return 返回NamedScript对象
+	 */
+	public static NamedScript parse(String dsl, Object... params) {
+		return parse(null, dsl, params);
+	}
+
+	/**
+	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除前缀和后缀（默认以“#[”作为前缀，以“]”作为后缀。），否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
+	 * 
+	 * @param dsl
+	 *            源DSL脚本
+	 * @param params
 	 *            参数查找表
 	 * @return 返回NamedScript对象
 	 */
-	public static NamedScript parse(String dsl, Map<String, Object> params) {
-		return parse(dsl, null, params);
+	public static NamedScript parse(String dsl, Object params) {
+		return parse(null, dsl, params);
 	}
 
 	/**
 	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
 	 * 
+	 * @param context
+	 *            上下文
 	 * @param dsl
 	 *            源DSL脚本
+	 * @param params
+	 *            查询参数列表
+	 * @return 返回NamedScript对象
+	 */
+	public static NamedScript parse(DSLContext context, String dsl, Object... params) {
+		Map<String, Object> paramsMap;
+		if (params != null) {
+			if (params.length % 2 == 0) {
+				paramsMap = new HashMap<String, Object>(params.length / 2);
+				for (int i = 0; i < params.length; i++) {
+					paramsMap.put((String) params[i], params[++i]);
+				}
+			} else {
+				throw new IllegalArgumentException("The number of parameters must be a multiple of 2");
+			}
+		} else {
+			paramsMap = new HashMap<String, Object>();
+		}
+		return parse(context, dsl, paramsMap);
+	}
+
+	/**
+	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除前缀和后缀（默认以“#[”作为前缀，以“]”作为后缀。），否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
+	 * 
 	 * @param context
-	 *            宏上下文
+	 *            上下文
+	 * @param dsl
+	 *            源DSL脚本
 	 * @param params
 	 *            参数查找表
 	 * @return 返回NamedScript对象
 	 */
-	public static NamedScript parse(String dsl, Map<String, Object> context, Map<String, Object> params) {
+	public static NamedScript parse(DSLContext context, String dsl, Object params) {
 		Map<String, Object> usedParams = new HashMap<String, Object>();
-		if (params == null) {
-			params = new HashMap<String, Object>();
-		}
 		if (StringUtils.isBlank(dsl)) {
 			return new NamedScript(dsl, usedParams);
 		}
-		dsl = StringUtils.stripStart(dsl, LINE_SPLITOR);// 去除仅含换行符的行
-		dsl = StringUtils.stripEnd(dsl, EMPTY_CHARS);// 去除空白字符
+		dsl = deleteStartBlankLines(StringUtils.stripEnd(dsl, null));// 删除前面空白行和末尾空白字符
 		int len = dsl.length();
 		if (len < 3) {// 长度太小（小于字符串“#[]”的长度）无法构成动态，直接返回
 			return new NamedScript(dsl, usedParams);
 		}
+		if (params == null) {
+			params = new HashMap<String, Object>();
+		}
+		ParamGetter paramGetter = getParamGetter(context);
+		String paramName;
+		Object value;
 		int i = 0, deep = 0, backslashes = 0;// 连续反斜杠数
 		char a = BLANK_SPACE, b = BLANK_SPACE, c;
 		boolean isString = false, // 是否在字符串区域
@@ -95,12 +142,12 @@ public abstract class DSLUtils {
 				isMiltilineComment = false, // 是否在多行注释区域
 				isDynamic = false, // 是否在动态脚本区域
 				isParam = false, // 是否在参数区域
-				isEmbed = false;// 是否在嵌入式参数区域
-		StringBuilder script = new StringBuilder(), paramName = new StringBuilder();
-		HashMap<Integer, Boolean> inValidMap = new HashMap<Integer, Boolean>();
-		HashMap<Integer, Set<String>> validMap = new HashMap<Integer, Set<String>>(),
-				embedMap = new HashMap<Integer, Set<String>>();
-		HashMap<Integer, StringBuilder> dslMap = new HashMap<Integer, StringBuilder>();
+				isEmbed = false; // 是否在嵌入式参数区域
+		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
+		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
+		HashMap<Integer, Set<String>> validParams = new HashMap<Integer, Set<String>>(),
+				embedParams = new HashMap<Integer, Set<String>>();
+		HashMap<Integer, StringBuilder> dslfBuilders = new HashMap<Integer, StringBuilder>();
 		HashMap<Integer, Map<String, Object>> contexts = new HashMap<Integer, Map<String, Object>>();
 		while (i < len) {
 			c = dsl.charAt(i);
@@ -114,36 +161,42 @@ public abstract class DSLUtils {
 					backslashes = 0;
 				}
 				if (deep > 0) {
-					dslMap.get(deep).append(c);
+					dslfBuilders.get(deep).append(c);
 				} else {
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			} else if (isSinglelineComment) {// 单行注释内
 				if (isDynamic && isDynamicEnd(c)) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
-					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
-								contexts, deep, false);
+					if (inValidParams.get(deep) == null) {// 不含无效参数
+						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+								inValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
+							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+							break;
+						}
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
-								contexts, deep, true);
+						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+								inValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+							break;
+						}
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
 						isDynamic = false;
-						deleteRedundantBlank(script);// 删除多余空白字符
+						deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 					} else {
-						deleteRedundantBlank(dslMap.get(deep));// 删除多余空白字符
+						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
 					if (c == LINE_BREAK) {
 						isSinglelineComment = false;
 					}
 					if (deep > 0) {
-						dslMap.get(deep).append(c);
+						dslfBuilders.get(deep).append(c);
 					} else {
-						script.append(c);
+						scriptBuilder.append(c);
 					}
 				}
 			} else if (isMiltilineComment) {// 多行注释内
@@ -151,270 +204,252 @@ public abstract class DSLUtils {
 					isMiltilineComment = false;
 				}
 				if (deep > 0) {
-					dslMap.get(deep).append(c);
+					dslfBuilders.get(deep).append(c);
 				} else {
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
 				isString = true;
 				if (deep > 0) {
-					dslMap.get(deep).append(c);
+					dslfBuilders.get(deep).append(c);
 				} else {
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
 				isSinglelineComment = true;
 				if (deep > 0) {
-					dslMap.get(deep).append(c);
+					dslfBuilders.get(deep).append(c);
 				} else {
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
 				isMiltilineComment = true;
 				if (deep > 0) {
-					dslMap.get(deep).append(c);
+					dslfBuilders.get(deep).append(c);
 				} else {
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			} else if (isDynamic) {// 当前字符处于动态脚本区域
 				if (isDynamicEnd(c)) {// 结束当前动态脚本区域
 					if (isParam) {// 处于动态参数区域
 						isParam = false;// 结束动态参数区域
-						String name = paramName.toString();
-						Object value = ObjectUtils.getValueIgnoreException(params, name);
+						paramName = paramNameBuilder.toString();
+						value = paramGetter.getValue(params, paramName);
 						if (value != null) {
-							validMap.get(deep).add(name);
-							paramName.setLength(0);
+							validParams.get(deep).add(paramName);
+							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
-							inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 						}
 					} else if (isEmbed) {
 						isEmbed = false;// 结束动态嵌入式参数区域
-						String name = paramName.toString();
-						Object value = ObjectUtils.getValueIgnoreException(params, name);
+						paramName = paramNameBuilder.toString();
+						value = paramGetter.getValue(params, paramName);
 						if (value != null) {
-							embedMap.get(deep).add(name);
-							paramName.setLength(0);
+							embedParams.get(deep).add(paramName);
+							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
-							inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 						}
 					}
-					if (inValidMap.get(deep) == null) {// 不含无效参数
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
-								contexts, deep, false);
+					if (inValidParams.get(deep) == null) {// 不含无效参数
+						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+								inValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
+							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+							break;
+						}
 						deep--;
 					} else if (deep > 0) {
-						processDSL(params, script, dslMap, usedParams, inValidMap, validMap, embedMap, context,
-								contexts, deep, true);
+						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+								inValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+							break;
+						}
 						deep--;
 					}
 					if (deep < 1) {// 已离开动态脚本区域
 						isDynamic = false;
-						deleteRedundantBlank(script);// 删除多余空白字符
+						deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 					} else {
-						deleteRedundantBlank(dslMap.get(deep));// 删除多余空白字符
+						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
 					if (isParam) {// 处于动态参数区域
 						if (isParamChar(c)) {
-							paramName.append(c);
-							StringBuilder dslBuilder = dslMap.get(deep);
-							if (dslBuilder == null) {
-								dslBuilder = new StringBuilder();
-								dslMap.put(deep, dslBuilder);
+							paramNameBuilder.append(c);
+							dslfBuilder = dslfBuilders.get(deep);
+							if (dslfBuilder == null) {
+								dslfBuilder = new StringBuilder();
+								dslfBuilders.put(deep, dslfBuilder);
 							}
-							dslBuilder.append(c);
+							dslfBuilder.append(c);
 						} else {// 离开动态参数区域
 							isParam = false;
-							String name = paramName.toString();
-							Object value = ObjectUtils.getValueIgnoreException(params, name);
+							paramName = paramNameBuilder.toString();
+							value = paramGetter.getValue(params, paramName);
 							if (value != null) {
-								validMap.get(deep).add(name);
+								validParams.get(deep).add(paramName);
 							} else if (deep >= 0) {
-								inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 							}
-							paramName.setLength(0);
+							paramNameBuilder.setLength(0);
 
 							if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
-								StringBuilder dslBuilder = dslMap.get(deep);
-								dslBuilder.deleteCharAt(dslBuilder.length() - 1);// 删除#号
+								dslfBuilder = dslfBuilders.get(deep);
+								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 								deep++;
-								dslMap.put(deep, new StringBuilder());
-								validMap.put(deep, new HashSet<String>());
-								embedMap.put(deep, new HashSet<String>());
+								dslfBuilders.put(deep, new StringBuilder());
+								validParams.put(deep, new HashSet<String>());
+								embedParams.put(deep, new HashSet<String>());
 							} else {
-								StringBuilder dslBuilder = dslMap.get(deep);
-								if (dslBuilder == null) {
-									dslBuilder = new StringBuilder();
-									dslMap.put(deep, dslBuilder);
+								dslfBuilder = dslfBuilders.get(deep);
+								if (dslfBuilder == null) {
+									dslfBuilder = new StringBuilder();
+									dslfBuilders.put(deep, dslfBuilder);
 								}
-								dslBuilder.append(c);
+								dslfBuilder.append(c);
 							}
 						}
 					} else if (isEmbed) {// 处于动态嵌入式参数区域
 						if (isParamChar(c)) {
-							paramName.append(c);
-							StringBuilder dslBuilder = dslMap.get(deep);
-							if (dslBuilder == null) {
-								dslBuilder = new StringBuilder();
-								dslMap.put(deep, dslBuilder);
+							paramNameBuilder.append(c);
+							dslfBuilder = dslfBuilders.get(deep);
+							if (dslfBuilder == null) {
+								dslfBuilder = new StringBuilder();
+								dslfBuilders.put(deep, dslfBuilder);
 							}
-							dslBuilder.append(c);
+							dslfBuilder.append(c);
 						} else {// 离开动态嵌入式参数区域
 							isEmbed = false;
-							String name = paramName.toString();
-							Object value = ObjectUtils.getValueIgnoreException(params, name);
+							paramName = paramNameBuilder.toString();
+							value = paramGetter.getValue(params, paramName);
 							if (value != null) {
-								embedMap.get(deep).add(name);
+								embedParams.get(deep).add(paramName);
 							} else if (deep >= 0) {
-								inValidMap.put(deep, Boolean.TRUE);// 含有无效参数标记
+								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 							}
-							paramName.setLength(0);
+							paramNameBuilder.setLength(0);
 
 							if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
-								StringBuilder dslBuilder = dslMap.get(deep);
-								dslBuilder.deleteCharAt(dslBuilder.length() - 1);// 删除#号
+								dslfBuilder = dslfBuilders.get(deep);
+								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 								deep++;
-								dslMap.put(deep, new StringBuilder());
-								validMap.put(deep, new HashSet<String>());
-								embedMap.put(deep, new HashSet<String>());
+								dslfBuilders.put(deep, new StringBuilder());
+								validParams.put(deep, new HashSet<String>());
+								embedParams.put(deep, new HashSet<String>());
 							} else {
-								StringBuilder dslBuilder = dslMap.get(deep);
-								if (dslBuilder == null) {
-									dslBuilder = new StringBuilder();
-									dslMap.put(deep, dslBuilder);
+								dslfBuilder = dslfBuilders.get(deep);
+								if (dslfBuilder == null) {
+									dslfBuilder = new StringBuilder();
+									dslfBuilders.put(deep, dslfBuilder);
 								}
-								dslBuilder.append(c);
+								dslfBuilder.append(c);
 							}
 						}
 					} else {// 未处于动态参数区域
 						if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
-							StringBuilder dslBuilder = dslMap.get(deep);
-							dslBuilder.deleteCharAt(dslBuilder.length() - 1);// 删除#号
+							dslfBuilder = dslfBuilders.get(deep);
+							dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 							deep++;
-							dslMap.put(deep, new StringBuilder());
-							validMap.put(deep, new HashSet<String>());
-							embedMap.put(deep, new HashSet<String>());
+							dslfBuilders.put(deep, new StringBuilder());
+							validParams.put(deep, new HashSet<String>());
+							embedParams.put(deep, new HashSet<String>());
 						} else {
 							if (isParamBegin(a, b, c)) {
 								isParam = true;
-								paramName.setLength(0);
-								paramName.append(c);
+								paramNameBuilder.setLength(0);
+								paramNameBuilder.append(c);
 							} else if (isEmbedBegin(a, b, c)) {
 								isEmbed = true;
-								paramName.setLength(0);
-								paramName.append(c);
+								paramNameBuilder.setLength(0);
+								paramNameBuilder.append(c);
 							}
 
-							StringBuilder dslBuilder = dslMap.get(deep);
-							if (dslBuilder == null) {
-								dslBuilder = new StringBuilder();
-								dslMap.put(deep, dslBuilder);
+							dslfBuilder = dslfBuilders.get(deep);
+							if (dslfBuilder == null) {
+								dslfBuilder = new StringBuilder();
+								dslfBuilders.put(deep, dslfBuilder);
 							}
-							dslBuilder.append(c);
+							dslfBuilder.append(c);
 						}
 					}
 				}
 			} else {// 当前字符未处于动态脚本区域
 				if (isDynamicBegin(b, c)) {
 					isDynamic = true;
-					script.deleteCharAt(script.length() - 1);
+					scriptBuilder.deleteCharAt(scriptBuilder.length() - 1);
 					deep++;
-					dslMap.put(deep, new StringBuilder());
-					validMap.put(deep, new HashSet<String>());
-					embedMap.put(deep, new HashSet<String>());
+					dslfBuilders.put(deep, new StringBuilder());
+					validParams.put(deep, new HashSet<String>());
+					embedParams.put(deep, new HashSet<String>());
 				} else {
 					if (isParam) {// 处于参数区域
 						if (isParamChar(c)) {
-							paramName.append(c);
+							paramNameBuilder.append(c);
 							if (i == len - 1) {
-								String name = paramName.toString();
-								usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
+								paramName = paramNameBuilder.toString();
+								usedParams.put(paramName, paramGetter.getValue(params, paramName));
 							}
 						} else {// 离开参数区域
 							isParam = false;
-							String name = paramName.toString();
-							usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
+							paramName = paramNameBuilder.toString();
+							usedParams.put(paramName, paramGetter.getValue(params, paramName));
 							if (i < len - 1) {
-								paramName.setLength(0);
+								paramNameBuilder.setLength(0);
 							}
 						}
 					} else if (isEmbed) {// 处于嵌入式参数区域
 						if (isParamChar(c)) {
-							paramName.append(c);
+							paramNameBuilder.append(c);
 							if (i == len - 1) {// 最后一个参数字符
-								script.setLength(script.length() - paramName.length());
-								Object value = ObjectUtils.getValueIgnoreException(params, paramName.toString());
-								script.append(value == null ? "null" : value.toString());
+								scriptBuilder.setLength(scriptBuilder.length() - paramNameBuilder.length());
+								value = paramGetter.getValue(params, paramNameBuilder.toString());
+								scriptBuilder.append(value == null ? "null" : value.toString());
 								break;
 							}
 						} else {// 离开嵌入式参数区域
 							isEmbed = false;
-							script.setLength(script.length() - paramName.length() - 1);// 需要将#号也删除
-							Object value = ObjectUtils.getValueIgnoreException(params, paramName.toString());
-							script.append(value == null ? "null" : value.toString());
+							scriptBuilder.setLength(scriptBuilder.length() - paramNameBuilder.length() - 1);// 需要将#号也删除
+							value = paramGetter.getValue(params, paramNameBuilder.toString());
+							scriptBuilder.append(value == null ? "null" : value.toString());
 							if (i < len - 1) {
-								paramName.setLength(0);
+								paramNameBuilder.setLength(0);
 							}
 						}
 					} else {// 未处于参数区域
 						if (isParamBegin(a, b, c)) {
 							isParam = true;
-							paramName.setLength(0);
-							paramName.append(c);
+							paramNameBuilder.setLength(0);
+							paramNameBuilder.append(c);
 						} else if (isEmbedBegin(a, b, c)) {
 							isEmbed = true;
-							paramName.setLength(0);
-							paramName.append(c);
+							paramNameBuilder.setLength(0);
+							paramNameBuilder.append(c);
 						}
 					}
-					script.append(c);
+					scriptBuilder.append(c);
 				}
 			}
 			a = b;
 			b = c;
 			i++;
 		}
-		return new NamedScript(script.toString(), usedParams);
+		return new NamedScript(scriptBuilder.toString(), usedParams);
 	}
 
 	/**
-	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
+	 * 将指定的含有命名参数的脚本及其参数对照表转换为可执行的脚本对象（含可执行脚本及对应的参数列表）
 	 * 
-	 * @param dsl
-	 *            源DSL脚本
+	 * @param namedScript
+	 *            使用命名参数的脚本对象模型
 	 * @param params
-	 *            查询参数列表
-	 * @return 返回NamedScript对象
+	 *            查询对照表
+	 * @param parser
+	 *            参数解析器
+	 * @return 返回可执行的脚本对象
 	 */
-	public static NamedScript parse(String dsl, Object... params) {
-		return parse(dsl, null, params);
-	}
-
-	/**
-	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
-	 * 
-	 * @param dsl
-	 *            源DSL脚本
-	 * @param context
-	 *            宏上下文
-	 * @param params
-	 *            查询参数列表
-	 * @return 返回NamedScript对象
-	 */
-	@SuppressWarnings("unchecked")
-	public static NamedScript parse(String dsl, Map<String, Object> context, Object... params) {
-		Map<String, Object> paramsMap = new HashMap<String, Object>();
-		if (params != null) {
-			if (params.length == 1 && params[0] instanceof Map) {
-				paramsMap = (Map<String, Object>) params[0];
-			} else {
-				for (int i = 0; i < params.length; i++) {
-					paramsMap.put((String) params[i], params[++i]);
-				}
-			}
-		}
-		return parse(dsl, context, paramsMap);
+	public static <T> Script<T> toScript(NamedScript namedScript, ParamsParser<T> parser) {
+		return toScript(namedScript.getScript(), namedScript.getParams(), parser);
 	}
 
 	/**
@@ -546,7 +581,7 @@ public abstract class DSLUtils {
 	 * 
 	 * @param c
 	 *            指定字符
-	 * @return 如果字符c为26个字母（大小写均可）、“0-9”或者“_”，返回true，否则返回false
+	 * @return 如果字符c为26个字母（大小写均可）、“0-9”、“.”、“[”、“]”或者“_”，返回true，否则返回false
 	 */
 	public static boolean isParamChar(char c) {
 		return is26LettersIgnoreCase(c) || (c >= '0' && c <= '9') || c == '_';
@@ -579,69 +614,98 @@ public abstract class DSLUtils {
 	}
 
 	/**
+	 * 删除前面的空白行
+	 * 
+	 * @param dsl
+	 *            动态脚本语言
+	 */
+	private static String deleteStartBlankLines(String dsl) {
+		int lastLineTailIndex = -1;
+		for (int len = dsl.length(), i = 0; i < len; i++) {
+			char c = dsl.charAt(i);
+			if (Character.isWhitespace(c)) {
+				if (LINE_TAIL.contains(c)) {
+					lastLineTailIndex = i;
+				}
+			} else {
+				break;
+			}
+		}
+		if (lastLineTailIndex >= 0) {
+			return dsl.substring(lastLineTailIndex + 1);
+		}
+		return dsl;
+	}
+
+	/**
 	 * 处理DSL片段
 	 * 
 	 * @param params
 	 *            查询参数
-	 * @param script
+	 * @param paramGetter
+	 *            参数获取器
+	 * @param scriptBuilder
 	 *            目标脚本字符串构建器
-	 * @param dslMap
+	 * @param dslfBuilders
 	 *            DSL片段（带深度）缓存表
 	 * @param usedParams
 	 *            使用到的参数
-	 * @param inValidMap
+	 * @param inValidParams
 	 *            含有无效参数标记
-	 * @param validMap
+	 * @param validParams
 	 *            有效参数表
-	 * @param embedMap
+	 * @param embedParams
 	 *            嵌入式参数表
 	 * @param globalContext
-	 *            全局宏运行上下文
-	 * @param contexts
-	 *            宏运行上下文
+	 *            全局上下文
+	 * @param attributesMap
+	 *            各层级属性表。各层属性表由当本层已运行的宏所存储，供本层后续执行的宏使用
 	 * @param deep
 	 *            当前动态脚本深度
 	 * @param emptyWhenNoMacro
 	 *            DSL片段没有宏时目标脚本是否为空白字符串
 	 */
-	private static final void processDSL(Map<String, Object> params, StringBuilder script,
-			HashMap<Integer, StringBuilder> dslMap, Map<String, Object> usedParams,
-			HashMap<Integer, Boolean> inValidMap, HashMap<Integer, Set<String>> validMap,
-			HashMap<Integer, Set<String>> embedMap, Map<String, Object> globalContext,
-			HashMap<Integer, Map<String, Object>> contexts, int deep, boolean emptyWhenNoMacro) {
-		Map<String, Object> context = contexts.get(deep);
-		if (context == null) {
-			context = new HashMap<String, Object>();
-			if (globalContext != null) {
-				context.putAll(globalContext);
-			}
-			contexts.put(deep, context);
+	private static final boolean processDSL(DSLContext context, StringBuilder scriptBuilder,
+			HashMap<Integer, StringBuilder> dslfBuilders, Object params, ParamGetter paramGetter,
+			Map<String, Object> usedParams, HashMap<Integer, Boolean> inValidParams,
+			HashMap<Integer, Set<String>> validParams, HashMap<Integer, Set<String>> embedParams,
+			HashMap<Integer, Map<String, Object>> attributesMap, int deep, boolean emptyWhenNoMacro) {
+		Map<String, Object> attributes = attributesMap.get(deep);
+		if (attributes == null) {
+			attributes = new HashMap<String, Object>();
+			attributesMap.put(deep, attributes);
 		}
-		StringBuilder dslBuilder = MacroUtils.execute(dslMap.get(deep), context, params, emptyWhenNoMacro);
-		if (deep == 1) {
-			if (embedMap.isEmpty()) {
-				script.append(dslBuilder);
-			} else {
-				String namedScript = dslBuilder.toString();
-				Object value;
-				for (String name : embedMap.get(deep)) {
-					value = ObjectUtils.getValueIgnoreException(params, name);
-					namedScript = namedScript.replaceAll(EMBED_PREFIX + name,
-							value == null ? "null" : value.toString());
-				}
-				script.append(namedScript);
-			}
-			for (String name : validMap.get(deep)) {
-				if (!usedParams.containsKey(name) && dslBuilder.indexOf(PARAM_PREFIX + name) >= 0) {
-					usedParams.put(name, ObjectUtils.getValueIgnoreException(params, name));
-				}
-			}
+		Dslf dslf = MacroUtils.execute(context, attributes, dslfBuilders.get(deep), params, paramGetter,
+				emptyWhenNoMacro);
+		usedParams.putAll(dslf.getUsedParams());
+		boolean dslfAsScript = dslf.isDslfAsScript();
+		if (dslfAsScript || deep == 1) {
+			replaceEmbedParams(params, scriptBuilder, paramGetter, dslf, usedParams, embedParams, deep);
 		} else {
-			dslMap.get(deep - 1).append(dslBuilder);
+			dslfBuilders.get(deep - 1).append(dslf.getValue());
 		}
-		dslMap.remove(deep);
-		validMap.remove(deep);
-		inValidMap.remove(deep);
+		dslfBuilders.remove(deep);
+		validParams.remove(deep);
+		inValidParams.remove(deep);
+		return dslfAsScript;
+	}
+
+	private static void replaceEmbedParams(Object params, StringBuilder scriptBuilder, ParamGetter paramGetter,
+			Dslf dslf, Map<String, Object> usedParams, HashMap<Integer, Set<String>> embedParams, int deep) {
+		if (dslf.isDslfAsScript()) {
+			scriptBuilder.setLength(0);
+		}
+		if (embedParams.isEmpty()) {
+			scriptBuilder.append(dslf.getValue());
+		} else {
+			String namedScript = dslf.getValue().toString();
+			Object value;
+			for (String name : embedParams.get(deep)) {
+				value = paramGetter.getValue(params, name);
+				namedScript = namedScript.replaceAll(EMBED_PREFIX + name, value == null ? "null" : value.toString());
+			}
+			scriptBuilder.append(namedScript);
+		}
 	}
 
 	private static boolean isSinglelineCommentBegin(char b, char c) {
@@ -719,18 +783,18 @@ public abstract class DSLUtils {
 	/**
 	 * 删除将指定字符串缓冲区末尾多余的空白字符（包括回车符、换行符、制表符、空格）
 	 * 
-	 * @param target
+	 * @param sb
 	 *            指定字符串缓冲区
 	 */
-	private static void deleteRedundantBlank(StringBuilder target) {
-		int length = target.length(), i = length;
-		while (i > 0) {
-			char ch = target.charAt(--i);
-			if (ch > BLANK_SPACE) {
-				target.delete(i + 1, length);
-				break;
+	private static void deleteRedundantBlank(StringBuilder sb) {
+		for (int len = sb.length(), i = len - 1; i >= 0; i--) {
+			char c = sb.charAt(i);
+			if (!Character.isWhitespace(c)) {
+				sb.setLength(i + 1);
+				return;
 			}
 		}
+		sb.setLength(0);
 	}
 
 	/**
@@ -742,6 +806,200 @@ public abstract class DSLUtils {
 	 */
 	private static boolean is26LettersIgnoreCase(char c) {
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+	}
+
+	private static boolean isEmpty(Collection<?> c) {
+		return c == null || c.isEmpty();
+	}
+
+	private static ParamGetter getParamGetter(DSLContext context) {
+		if (context == null) {
+			return SimpleParamGetter.getInstance();
+		} else {
+			List<ParamsConverter<?>> paramsConverters = context.getParamsConverters();
+			List<ParamsFilter> paramsFilters = context.getParamsFilters();
+			if (isEmpty(paramsConverters)) {
+				if (isEmpty(paramsFilters)) {
+					return SimpleParamGetter.getInstance();
+				} else {
+					return new FilterAbleParamGetter(paramsFilters);
+				}
+			} else {
+				if (isEmpty(paramsFilters)) {
+					return new ConvertAbleParamGetter(paramsConverters);
+				} else {
+					return new FullFeaturesParamGetter(paramsConverters, paramsFilters);
+				}
+			}
+		}
+	}
+
+	/**
+	 * 简单参数获取器
+	 * 
+	 * @author June wjzhao@aliyun.com
+	 * 
+	 * @since 1.3.0
+	 */
+	private static class SimpleParamGetter implements ParamGetter {
+
+		private static final SimpleParamGetter INSTANCE = new SimpleParamGetter();
+
+		private SimpleParamGetter() {
+			super();
+		}
+
+		protected static SimpleParamGetter getInstance() {
+			return INSTANCE;
+		}
+
+		@Override
+		public Object getValue(Object params, String paramName) {
+			return ObjectUtils.getValueIgnoreException(params, paramName);
+		}
+
+	}
+
+	/**
+	 * 支持转换的参数获取器
+	 * 
+	 * @author June wjzhao@aliyun.com
+	 * 
+	 * @since 1.3.0
+	 *
+	 */
+	private static class ConvertAbleParamGetter implements ParamGetter {
+
+		private final Map<String, Object> convertedParams = new HashMap<String, Object>();
+
+		private final List<ParamsConverter<?>> paramsConverters;
+
+		private ConvertAbleParamGetter(List<ParamsConverter<?>> paramsConverters) {
+			super();
+			this.paramsConverters = paramsConverters;
+		}
+
+		@Override
+		public Object getValue(Object params, String paramName) {
+			return convert(paramsConverters, convertedParams, params, paramName);
+		}
+
+		public static Object convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> convertedParams,
+				Object params, String paramName) {
+			if (convertedParams.containsKey(paramName)) {
+				return convertedParams.get(paramName);
+			}
+			Object value = ObjectUtils.getValueIgnoreException(params, paramName);
+			ParamsConverter<?> paramsConverter;
+			for (int i = 0, size = paramsConverters.size(); i < size; i++) {
+				paramsConverter = paramsConverters.get(i);
+				if (paramsConverter.determine(paramName)) {
+					value = paramsConverter.convert(value);
+				}
+			}
+			convertedParams.put(paramName, value);
+			return value;
+		}
+
+	}
+
+	/**
+	 * 支持过滤的参数获取器
+	 * 
+	 * @author June wjzhao@aliyun.com
+	 * 
+	 * @since 1.3.0
+	 *
+	 */
+	private static class FilterAbleParamGetter implements ParamGetter {
+
+		private final Set<String> filteredParams = new HashSet<String>();
+
+		private final List<ParamsFilter> paramsFilters;
+
+		private FilterAbleParamGetter(List<ParamsFilter> paramsFilters) {
+			super();
+			this.paramsFilters = paramsFilters;
+		}
+
+		@Override
+		public Object getValue(Object params, String paramName) {
+			if (filteredParams.contains(paramName)) {
+				return null;
+			}
+			return filter(paramsFilters, filteredParams, paramName,
+					ObjectUtils.getValueIgnoreException(params, paramName));
+		}
+
+		public static Object filter(List<ParamsFilter> paramsFilters, Set<String> filteredParams, String paramName,
+				Object value) {
+			ParamsFilter paramsFilter;
+			for (int i = 0, size = paramsFilters.size(); i < size; i++) {
+				paramsFilter = paramsFilters.get(i);
+				if (paramsFilter.determine(paramName, value)) {
+					value = null;
+					break;
+				}
+			}
+			filteredParams.add(paramName);
+			return value;
+		}
+
+	}
+
+	/**
+	 * 具有完整特性（支持参数转换和过滤）的参数获取器
+	 * 
+	 * @author June wjzhao@aliyun.com
+	 * 
+	 * @since 1.3.0
+	 *
+	 */
+	private static class FullFeaturesParamGetter implements ParamGetter {
+
+		private final Map<String, Object> convertedParams = new HashMap<String, Object>();
+
+		private final Set<String> filteredParams = new HashSet<String>();
+
+		private final List<ParamsConverter<?>> paramsConverters;
+
+		private final List<ParamsFilter> paramsFilters;
+
+		private FullFeaturesParamGetter(List<ParamsConverter<?>> paramsConverters, List<ParamsFilter> paramsFilters) {
+			super();
+			this.paramsConverters = paramsConverters;
+			this.paramsFilters = paramsFilters;
+		}
+
+		@Override
+		public Object getValue(Object params, String paramName) {
+			if (filteredParams.contains(paramName)) {
+				return null;
+			}
+			return FilterAbleParamGetter.filter(paramsFilters, filteredParams, paramName,
+					ConvertAbleParamGetter.convert(paramsConverters, convertedParams, params, paramName));
+		}
+
+	}
+
+	/**
+	 * 参数获取器
+	 * 
+	 * @author wjzhao@aliyun.com
+	 * 
+	 * @since 1.3.0
+	 */
+	protected static interface ParamGetter {
+		/**
+		 * 获取参数值
+		 * 
+		 * @param params
+		 *            参数集
+		 * @param paramName
+		 *            参数名称
+		 * @return 参数值
+		 */
+		Object getValue(Object params, String paramName);
 	}
 
 }

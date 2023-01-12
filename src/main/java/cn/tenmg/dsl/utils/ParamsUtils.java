@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 参数工具类。已废弃，即将在后续版本移除，getParam方法请使用ObjectUtils.getValue或ObjectUtils.getValueIgnoreException方法替换。
+ * 参数工具类。已废弃，即将在后续版本移除，{@code getParam} 方法请使用 {@code ObjectUtils.getValue} 或 {@code ObjectUtils.getValueIgnoreException} 方法替换。
  * 
  * @author June wjzhao@aliyun.com
  * 

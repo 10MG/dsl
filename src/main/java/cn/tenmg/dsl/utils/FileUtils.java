@@ -22,7 +22,6 @@ import java.util.jar.JarEntry;
  *
  */
 public abstract class FileUtils {
-
 	private static final String JAR = "jar";
 
 	private static final boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("windows");
@@ -42,27 +41,48 @@ public abstract class FileUtils {
 	 *             I/O异常
 	 */
 	public static List<String> scanPackage(String basePackage, String suffix) throws IOException {
+		return scanPackage(ClassUtils.getDefaultClassLoader(), basePackage, suffix);
+	}
+
+	/**
+	 * 递归扫描指定包及其子包下指定后缀名的文件
+	 * 
+	 * @param classLoader
+	 *            类加载器
+	 * @param basePackage
+	 *            指定的包名
+	 * @param suffix
+	 *            指定的文件后缀名
+	 * @return 扫描到的文件列表
+	 * @throws IOException
+	 *             I/O异常
+	 */
+	public static List<String> scanPackage(ClassLoader classLoader, String basePackage, String suffix)
+			throws IOException {
 		basePackage = basePackage.replaceAll("\\.", "/");
-		URL url = ClassUtils.getDefaultClassLoader().getResource(basePackage);
-		if (url != null) {
-			if (url.getProtocol().equals(JAR)) {
-				List<String> result = new ArrayList<String>();
-				Enumeration<JarEntry> entries = ((JarURLConnection) url.openConnection()).getJarFile().entries();
-				while (entries.hasMoreElements()) {
-					String name = entries.nextElement().getName();
-					if (name.endsWith(suffix)) {
-						result.add(name);
+		Enumeration<URL> urls = classLoader.getResources(basePackage);
+		if (urls != null) {
+			List<String> fileNames = new ArrayList<String>();
+			for (URL url; urls.hasMoreElements();) {
+				url = urls.nextElement();
+				if (url.getProtocol().equals(JAR)) {
+					Enumeration<JarEntry> entries = ((JarURLConnection) url.openConnection()).getJarFile().entries();
+					while (entries.hasMoreElements()) {
+						String name = entries.nextElement().getName();
+						if (name.endsWith(suffix)) {
+							fileNames.add(name);
+						}
 					}
+				} else if (url.getProtocol().equals("file")) {
+					String path = url.getPath();
+					if (isWindows && path.startsWith("/")) {
+						path = path.substring(1);
+					}
+					fileNames.addAll(walkFileTree(Paths.get(path),
+							Paths.get(path.substring(0, path.lastIndexOf(basePackage))).toString(), suffix));
 				}
-				return result;
-			} else if (url.getProtocol().equals("file")) {
-				String path = url.getPath();
-				if (isWindows && path.startsWith("/")) {
-					path = path.substring(1);
-				}
-				return walkFileTree(Paths.get(path),
-						Paths.get(path.substring(0, path.lastIndexOf(basePackage))).toString(), suffix);
 			}
+			return fileNames;
 		}
 		return null;
 	}
@@ -86,5 +106,4 @@ public abstract class FileUtils {
 		});
 		return result;
 	}
-
 }

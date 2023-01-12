@@ -91,7 +91,7 @@ public abstract class ObjectUtils {
 	 * @param object
 	 *            获取的对象
 	 * @param attribute
-	 *            属性表达式
+	 *            属性表达式。支持使用“field1.field2”访问属性的属性值，层级数不限，支持使用“[*]”访问数组值，维数不限，“field1.field2”和“[*]”也可以配合使用
 	 * @param <T>
 	 *            返回类型
 	 * @return 根据属性表达式获取，如果对象的指定属性（或者子孙属性）存在，则返回它的值；否则，返回null。
@@ -313,8 +313,16 @@ public abstract class ObjectUtils {
 						Method method = mthds[i];
 						name = method.getName();
 						count = method.getParameterCount();
-						if (count == 0 && name.startsWith("get")) {
-							getMethods.put(name, method);
+						if (count == 0) {
+							if (name.startsWith(GET)) {
+								getMethods.put(name, method);
+							} else if (name.startsWith("is") && name.length() > 2
+									&& Character.isUpperCase(name.charAt(2))
+									&& Boolean.class.isAssignableFrom(method.getReturnType())) {
+								getMethods.put(GET.concat(name.substring(2)), method);
+							} else {
+								getMethods.put(GET.concat(name), method);
+							}
 						}
 					}
 					getMethodMap.put(type, getMethods);
@@ -602,11 +610,11 @@ public abstract class ObjectUtils {
 						if (size > 1) {
 							throw new IllegalArgumentException(
 									StringUtils.concat("Trying to add an element at the index ", index,
-											", but there is only ", size, " elements in " + set.toString()));
+											", but there is only ", size, " elements in ", set.toString()));
 						} else {
 							throw new IllegalArgumentException(StringUtils.concat(
 									"Trying to add an element at the index ", index, ", but there is ",
-									(size > 0 ? "only 1" : "no"), " element in " + set.toString()));
+									(size > 0 ? "only 1" : "no"), " element in ", set.toString()));
 						}
 					}
 				} else {
