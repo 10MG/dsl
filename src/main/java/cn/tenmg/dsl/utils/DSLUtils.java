@@ -445,8 +445,6 @@ public abstract class DSLUtils {
 	 * 
 	 * @param namedScript
 	 *            使用命名参数的脚本对象模型
-	 * @param params
-	 *            查询对照表
 	 * @param parser
 	 *            参数解析器
 	 * @return 返回可执行的脚本对象

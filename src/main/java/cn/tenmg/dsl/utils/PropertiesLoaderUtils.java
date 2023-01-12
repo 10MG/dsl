@@ -66,7 +66,6 @@ public abstract class PropertiesLoaderUtils {
 	 *            属性对象
 	 * @param pathInClassPath
 	 *            配置文件相对于classPath的路径
-	 * @return 返回配置属性对象
 	 * @throws IOException
 	 *             I/O异常
 	 */
@@ -94,7 +93,6 @@ public abstract class PropertiesLoaderUtils {
 	 *            属性对象
 	 * @param pathInClassPath
 	 *            配置文件相对于classPath的路径
-	 * @return 返回配置属性对象
 	 */
 	public static void loadIgnoreException(Properties properties, String pathInClassPath) {
 		ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
