@@ -16,20 +16,6 @@ public abstract class PropertiesLoaderUtils {
 	private static final String XML_FILE_SUFFIX = ".xml";
 
 	/**
-	 * 从classPath下加载配置文件。请使用{@code load}方法替代
-	 * 
-	 * @param pathInClassPath
-	 *            配置文件相对于classPath的路径
-	 * @return 返回配置属性对象
-	 * @throws IOException
-	 *             I/O异常
-	 */
-	@Deprecated
-	public static Properties loadFromClassPath(String pathInClassPath) throws IOException {
-		return load(pathInClassPath);
-	}
-
-	/**
 	 * 从classPath下加载配置文件
 	 * 
 	 * @param pathInClassPath
