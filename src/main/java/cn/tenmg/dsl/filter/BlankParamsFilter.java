@@ -13,7 +13,7 @@ import cn.tenmg.dsl.utils.StringUtils;
  */
 public class BlankParamsFilter implements ParamsFilter {
 
-	protected String params = ParamsFilter.ALL;
+	private String params = ParamsFilter.ALL;
 
 	/**
 	 * 获取参数名称表达式，默认值为“*”。

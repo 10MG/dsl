@@ -10,6 +10,11 @@ package cn.tenmg.dsl.filter;
 public class LteParamsFilter extends CompareableParamsFilter {
 
 	@Override
+	boolean decideNull() {
+		return true;
+	}
+
+	@Override
 	<T extends Comparable<T>> boolean decide(T value, T compared) {
 		return value.compareTo(compared) <= 0;
 	}

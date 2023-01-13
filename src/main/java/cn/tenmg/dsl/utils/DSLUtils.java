@@ -145,7 +145,7 @@ public abstract class DSLUtils {
 				isMiltilineComment = false, // 是否在多行注释区域
 				isDynamic = false, // 是否在动态脚本区域
 				isParam = false, // 是否在参数区域
-				isEmbed = false; // 是否在嵌入式参数区域
+				isEmbed = false; // 是否在嵌入参数区域
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
 		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
 		HashMap<Integer, Set<String>> validParams = new HashMap<Integer, Set<String>>(),
@@ -245,7 +245,7 @@ public abstract class DSLUtils {
 							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 						}
 					} else if (isEmbed) {
-						isEmbed = false;// 结束动态嵌入式参数区域
+						isEmbed = false;// 结束动态嵌入参数区域
 						paramName = paramNameBuilder.toString();
 						value = paramGetter.getValue(params, paramName);
 						if (value != null) {
@@ -313,7 +313,7 @@ public abstract class DSLUtils {
 								dslfBuilder.append(c);
 							}
 						}
-					} else if (isEmbed) {// 处于动态嵌入式参数区域
+					} else if (isEmbed) {// 处于动态嵌入参数区域
 						if (isParamChar(c)) {
 							paramNameBuilder.append(c);
 							dslfBuilder = dslfBuilders.get(deep);
@@ -322,7 +322,7 @@ public abstract class DSLUtils {
 								dslfBuilders.put(deep, dslfBuilder);
 							}
 							dslfBuilder.append(c);
-						} else {// 离开动态嵌入式参数区域
+						} else {// 离开动态嵌入参数区域
 							isEmbed = false;
 							paramName = paramNameBuilder.toString();
 							value = paramGetter.getValue(params, paramName);
@@ -401,7 +401,7 @@ public abstract class DSLUtils {
 								paramNameBuilder.setLength(0);
 							}
 						}
-					} else if (isEmbed) {// 处于嵌入式参数区域
+					} else if (isEmbed) {// 处于嵌入参数区域
 						if (isParamChar(c)) {
 							paramNameBuilder.append(c);
 							if (i == len - 1) {// 最后一个参数字符
@@ -410,7 +410,7 @@ public abstract class DSLUtils {
 								scriptBuilder.append(value == null ? "null" : value.toString());
 								break;
 							}
-						} else {// 离开嵌入式参数区域
+						} else {// 离开嵌入参数区域
 							isEmbed = false;
 							scriptBuilder.setLength(scriptBuilder.length() - paramNameBuilder.length() - 1);// 需要将#号也删除
 							value = paramGetter.getValue(params, paramNameBuilder.toString());
@@ -563,7 +563,7 @@ public abstract class DSLUtils {
 	}
 
 	/**
-	 * 根据指定的三个前后相邻字符b和c，判断其是否为嵌入式参数脚本参数的开始位置
+	 * 根据指定的三个前后相邻字符b和c，判断其是否为嵌入参数脚本参数的开始位置
 	 * 
 	 * @param a
 	 *            前第二个字符
@@ -656,7 +656,7 @@ public abstract class DSLUtils {
 	 * @param validParams
 	 *            有效参数表
 	 * @param embedParams
-	 *            嵌入式参数表
+	 *            嵌入参数表
 	 * @param globalContext
 	 *            全局上下文
 	 * @param attributesMap
