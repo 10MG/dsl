@@ -186,6 +186,9 @@ public abstract class MacroUtils {
 			b = c;
 			i++;
 		}
+		if (returnEmptyWhenNoMacro) {
+			dsl.setLength(0);
+		}
 		return newDslf(dsl, usedParams, false);
 	}
 

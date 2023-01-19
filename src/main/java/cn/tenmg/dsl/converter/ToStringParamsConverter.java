@@ -11,7 +11,7 @@ public class ToStringParamsConverter extends AbstractParamsConverter<String> {
 
 	@Override
 	public String convert(Object value) {
-		return null == null ? null : value.toString();
+		return value == null ? null : value.toString();
 	}
 
 }
