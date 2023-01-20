@@ -79,6 +79,7 @@ DSL的全称是动态脚本语言（Dynamic Script Language），它是对脚本
 属性        | 含义         | 说明
 ------------|-------------|--------------------------------
 `params`    | 参数名表达式 | 可使用 `*` 作为通配符，多个参数表达式之间使用逗号分隔。
+`formatter` | 格式模板     | 当参数值为 `java.lang.Number`、`java.util.Date`、`java.util.Calendar` 的实例时，通过格式模板将对象格式化为字符串。如 `#,###.00`、`yyyy-MM-dd HH:mm:ss` 等
 
 
 ### WrapStringParamsConverter
