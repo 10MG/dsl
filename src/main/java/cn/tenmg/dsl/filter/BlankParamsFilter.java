@@ -36,13 +36,17 @@ public class BlankParamsFilter implements ParamsFilter {
 
 	@Override
 	public boolean determine(String name, Object value) {
-		if (StringUtils.isBlank(params) || value == null) {
+		if (StringUtils.isBlank(params)) {
 			return false;
+		} else if (MatchUtils.matchesAny(params.split(","), name)) {
+			if (value == null) {
+				return true;
+			}
+			if ((value instanceof String && StringUtils.isBlank((String) value))) {
+				return true;
+			}
 		}
-		if ((value instanceof String && StringUtils.isBlank((String) value))
-				&& MatchUtils.matchesAny(params.split(","), name)) {
-			return true;
-		}
+
 		return false;
 	}
 
