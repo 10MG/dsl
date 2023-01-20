@@ -11,7 +11,6 @@ import java.util.ServiceLoader;
 import cn.tenmg.dsl.DSLContext;
 import cn.tenmg.dsl.Macro;
 import cn.tenmg.dsl.exception.MacroException;
-import cn.tenmg.dsl.utils.DSLUtils.ParamGetter;
 
 /**
  * 宏工具类
@@ -69,7 +68,7 @@ public abstract class MacroUtils {
 	}
 
 	public static final Dslf execute(DSLContext context, Map<String, Object> attributes, StringBuilder dsl,
-			Object params, ParamGetter paramGetter, boolean returnEmptyWhenNoMacro) {
+			Map<String, Object> params, boolean emptyWhenNoMacro) {
 		Macro macro;
 		String macroName, paramName;
 		int len = dsl.length(), i = 0, backslashes = 0;
@@ -83,10 +82,10 @@ public abstract class MacroUtils {
 					macroName = macroNameBuilder.toString();
 					macro = getMacro(macroName);
 					if (macro == null) {// 找不到对应的宏
-						if (returnEmptyWhenNoMacro) {
+						if (emptyWhenNoMacro) {
 							dsl.setLength(0);
 						}
-						return newDslf(dsl, usedParams, false);
+						return newDslf(dsl, false);
 					} else {
 						StringBuilder logic = new StringBuilder();
 						boolean isString = false;// 是否在字符串区域
@@ -111,15 +110,15 @@ public abstract class MacroUtils {
 									if (deep == 0) {
 										if (logic.length() > 0) {
 											try {
-												return newDslf(dsl, usedParams, macro.execute(context, attributes,
-														logic.toString(), dsl.delete(0, i + 1), usedParams));
+												return newDslf(dsl, macro.execute(context, attributes, logic.toString(),
+														dsl.delete(0, i + 1), usedParams));
 											} catch (Exception e) {
 												throw new MacroException(
 														"Exception occurred when executing macro ".concat(macroName),
 														e);
 											}
 										} else {
-											return newDslf(dsl, usedParams, false);
+											return newDslf(dsl, false);
 										}
 									} else {
 										logic.append(c);
@@ -135,7 +134,7 @@ public abstract class MacroUtils {
 										} else {
 											isParam = false;
 											paramName = paramNameBuilder.toString();
-											usedParams.put(paramName, paramGetter.getValue(params, paramName));
+											usedParams.put(paramName, params.get(paramName));
 										}
 									} else {
 										if (DSLUtils.isParamBegin(a, b, c)) {
@@ -148,36 +147,35 @@ public abstract class MacroUtils {
 							}
 						}
 					}
-					return newDslf(dsl, usedParams, false);
+					return newDslf(dsl, false);
 				} else {
-					if (returnEmptyWhenNoMacro) {
+					if (emptyWhenNoMacro) {
 						dsl.setLength(0);
 					}
-					return newDslf(dsl, usedParams, false);
+					return newDslf(dsl, false);
 				}
 			} else if (c <= DSLUtils.BLANK_SPACE) {
 				if (macroNameBuilder.length() > 0) {
 					macroName = macroNameBuilder.toString();
 					macro = getMacro(macroName);
 					if (macro == null) {// 找不到对应的宏
-						if (returnEmptyWhenNoMacro) {
+						if (emptyWhenNoMacro) {
 							dsl.setLength(0);
 						}
-						return newDslf(dsl, usedParams, false);
+						return newDslf(dsl, false);
 					} else {// 当前字符为空白字符，则宏名称结束应该在前一个位置
 						try {
-							return newDslf(dsl, usedParams,
-									macro.execute(context, attributes, null, dsl.delete(0, i), usedParams));
+							return newDslf(dsl, macro.execute(context, attributes, null, dsl.delete(0, i), usedParams));
 						} catch (Exception e) {
 							throw new MacroException("An exception occurred when executing macro ".concat(macroName),
 									e);
 						}
 					}
 				} else {
-					if (returnEmptyWhenNoMacro) {
+					if (emptyWhenNoMacro) {
 						dsl.setLength(0);
 					}
-					return newDslf(dsl, usedParams, false);
+					return newDslf(dsl, false);
 				}
 			} else {
 				macroNameBuilder.append(c);
@@ -186,10 +184,10 @@ public abstract class MacroUtils {
 			b = c;
 			i++;
 		}
-		if (returnEmptyWhenNoMacro) {
+		if (emptyWhenNoMacro) {
 			dsl.setLength(0);
 		}
-		return newDslf(dsl, usedParams, false);
+		return newDslf(dsl, false);
 	}
 
 	/**
@@ -203,33 +201,26 @@ public abstract class MacroUtils {
 
 		private StringBuilder value;
 
-		private Map<String, Object> usedParams;
-
 		private boolean dslfAsScript;
 
 		public StringBuilder getValue() {
 			return value;
 		}
 
-		public Map<String, Object> getUsedParams() {
-			return usedParams;
-		}
-
 		public boolean isDslfAsScript() {
 			return dslfAsScript;
 		}
 
-		public Dslf(StringBuilder value, Map<String, Object> usedParams, boolean dslfAsScript) {
+		public Dslf(StringBuilder value, boolean dslfAsScript) {
 			super();
 			this.value = value;
-			this.usedParams = usedParams;
 			this.dslfAsScript = dslfAsScript;
 		}
 
 	}
 
-	private static final Dslf newDslf(StringBuilder value, Map<String, Object> usedParams, boolean dslfAsScript) {
-		return new Dslf(value, usedParams, dslfAsScript);
+	private static final Dslf newDslf(StringBuilder value, boolean dslfAsScript) {
+		return new Dslf(value, dslfAsScript);
 	}
 
 	private static String getMacroName(Class<?> type) {

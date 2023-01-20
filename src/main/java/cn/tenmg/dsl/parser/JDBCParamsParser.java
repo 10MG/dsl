@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import cn.tenmg.dsl.ParamsParser;
+import cn.tenmg.dsl.utils.CollectionUtils;
 import cn.tenmg.dsl.utils.DSLUtils;
 
 /**
@@ -34,17 +35,16 @@ public class JDBCParamsParser implements ParamsParser<List<Object>> {
 	}
 
 	@Override
-	public void parse(StringBuilder scriptBuilder, Map<String, ?> params, String paramName,
-			List<Object> targetParams) {
+	public void parse(StringBuilder scriptBuilder, Map<String, ?> params, String paramName, List<Object> targetParams) {
 		scriptBuilder.append(DSLUtils.PARAM_MARK);
 		Object value = params.get(paramName);
 		if (value != null) {
 			if (value instanceof Collection<?>) {
-				Collection<?> collection = (Collection<?>) value;
-				if (collection == null || collection.isEmpty()) {
+				Collection<?> c = (Collection<?>) value;
+				if (CollectionUtils.isEmpty(c)) {
 					targetParams.add(null);
 				} else {
-					Iterator<?> it = collection.iterator();
+					Iterator<?> it = c.iterator();
 					targetParams.add(it.next());
 					while (it.hasNext()) {
 						scriptBuilder.append(DSLUtils.COMMA).append(DSLUtils.BLANK_SPACE).append(DSLUtils.PARAM_MARK);

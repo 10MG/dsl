@@ -1,10 +1,11 @@
 package cn.tenmg.dsl.utils;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import cn.tenmg.dsl.DSLContext;
@@ -148,8 +149,8 @@ public abstract class DSLUtils {
 				isEmbed = false; // 是否在嵌入参数区域
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
 		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
-		HashMap<Integer, Set<String>> validParams = new HashMap<Integer, Set<String>>(),
-				embedParams = new HashMap<Integer, Set<String>>();
+		HashMap<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
+				embedParams = new HashMap<Integer, Map<String, Object>>();
 		HashMap<Integer, StringBuilder> dslfBuilders = new HashMap<Integer, StringBuilder>();
 		HashMap<Integer, Map<String, Object>> contexts = new HashMap<Integer, Map<String, Object>>();
 		while (i < len) {
@@ -239,7 +240,7 @@ public abstract class DSLUtils {
 						paramName = paramNameBuilder.toString();
 						value = paramGetter.getValue(params, paramName);
 						if (value != null) {
-							validParams.get(deep).add(paramName);
+							validParams.get(deep).put(paramName, value);
 							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
 							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
@@ -249,7 +250,7 @@ public abstract class DSLUtils {
 						paramName = paramNameBuilder.toString();
 						value = paramGetter.getValue(params, paramName);
 						if (value != null) {
-							embedParams.get(deep).add(paramName);
+							embedParams.get(deep).put(paramName, value);
 							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
 							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
@@ -291,7 +292,7 @@ public abstract class DSLUtils {
 							paramName = paramNameBuilder.toString();
 							value = paramGetter.getValue(params, paramName);
 							if (value != null) {
-								validParams.get(deep).add(paramName);
+								validParams.get(deep).put(paramName, value);
 							} else if (deep >= 0) {
 								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 							}
@@ -302,8 +303,8 @@ public abstract class DSLUtils {
 								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 								deep++;
 								dslfBuilders.put(deep, new StringBuilder());
-								validParams.put(deep, new HashSet<String>());
-								embedParams.put(deep, new HashSet<String>());
+								validParams.put(deep, new HashMap<String, Object>());
+								embedParams.put(deep, new HashMap<String, Object>());
 							} else {
 								dslfBuilder = dslfBuilders.get(deep);
 								if (dslfBuilder == null) {
@@ -327,7 +328,7 @@ public abstract class DSLUtils {
 							paramName = paramNameBuilder.toString();
 							value = paramGetter.getValue(params, paramName);
 							if (value != null) {
-								embedParams.get(deep).add(paramName);
+								embedParams.get(deep).put(paramName, value);
 							} else if (deep >= 0) {
 								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
 							}
@@ -338,8 +339,8 @@ public abstract class DSLUtils {
 								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 								deep++;
 								dslfBuilders.put(deep, new StringBuilder());
-								validParams.put(deep, new HashSet<String>());
-								embedParams.put(deep, new HashSet<String>());
+								validParams.put(deep, new HashMap<String, Object>());
+								embedParams.put(deep, new HashMap<String, Object>());
 							} else {
 								dslfBuilder = dslfBuilders.get(deep);
 								if (dslfBuilder == null) {
@@ -355,8 +356,8 @@ public abstract class DSLUtils {
 							dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
 							deep++;
 							dslfBuilders.put(deep, new StringBuilder());
-							validParams.put(deep, new HashSet<String>());
-							embedParams.put(deep, new HashSet<String>());
+							validParams.put(deep, new HashMap<String, Object>());
+							embedParams.put(deep, new HashMap<String, Object>());
 						} else {
 							if (isParamBegin(a, b, c)) {
 								isParam = true;
@@ -383,8 +384,8 @@ public abstract class DSLUtils {
 					scriptBuilder.deleteCharAt(scriptBuilder.length() - 1);
 					deep++;
 					dslfBuilders.put(deep, new StringBuilder());
-					validParams.put(deep, new HashSet<String>());
-					embedParams.put(deep, new HashSet<String>());
+					validParams.put(deep, new HashMap<String, Object>());
+					embedParams.put(deep, new HashMap<String, Object>());
 				} else {
 					if (isParam) {// 处于参数区域
 						if (isParamChar(c)) {
@@ -614,6 +615,94 @@ public abstract class DSLUtils {
 		}
 	}
 
+	public static Map<String, Object> getUsedParams(ParamGetter paramGetter, CharSequence namedscript, Object params) {
+		Map<String, Object> usedParams = new HashMap<String, Object>();
+		String paramName;
+		int i = 0, len = namedscript.length(), backslashes = 0;// 连续反斜杠数
+		char a = DSLUtils.BLANK_SPACE, b = a, c;
+		boolean isString = false, // 是否在字符串区域
+				isSinglelineComment = false, // 是否在单行注释区域
+				isMiltilineComment = false, // 是否在多行注释区域
+				isParam = false, // 是否在参数区域
+				isEmbed = false; // 是否在嵌入参数区域
+		StringBuilder paramNameBuilder = new StringBuilder();
+		while (i < len) {
+			c = namedscript.charAt(i);
+			if (isString) {// 字符串内
+				if (c == DSLUtils.BACKSLASH) {
+					backslashes++;
+				} else {
+					if (DSLUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+						isString = false;
+					}
+					backslashes = 0;
+				}
+			} else if (isSinglelineComment) {// 单行注释内
+				if (c == DSLUtils.LINE_BREAK) {
+					isSinglelineComment = false;
+				}
+			} else if (isMiltilineComment) {// 多行注释内
+				if (DSLUtils.isMiltilineCommentEnd(b, c)) {
+					isMiltilineComment = false;
+				}
+			} else if (c == DSLUtils.SINGLE_QUOTATION_MARK) {// 字符串区域开始
+				isString = true;
+			} else if (DSLUtils.isSinglelineCommentBegin(b, c)) {// 单行注释开始
+				isSinglelineComment = true;
+			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
+				isMiltilineComment = true;
+			} else {
+				if (isParam) {// 处于参数区域
+					if (isParamChar(c)) {
+						paramNameBuilder.append(c);
+						if (i == len - 1) {
+							paramName = paramNameBuilder.toString();
+							usedParams.put(paramName, paramGetter.getValue(params, paramName));
+							break;
+						}
+					} else {// 离开参数区域
+						isParam = false;
+						paramName = paramNameBuilder.toString();
+						usedParams.put(paramName, paramGetter.getValue(params, paramName));
+						if (i < len - 1) {
+							paramNameBuilder.setLength(0);
+						}
+					}
+				} else if (isEmbed) {// 处于嵌入参数区域
+					if (isParamChar(c)) {
+						paramNameBuilder.append(c);
+						if (i == len - 1) {// 最后一个参数字符
+							paramName = paramNameBuilder.toString();
+							usedParams.put(paramName, paramGetter.getValue(params, paramName));
+							break;
+						}
+					} else {// 离开嵌入参数区域
+						isEmbed = false;
+						paramName = paramNameBuilder.toString();
+						usedParams.put(paramName, paramGetter.getValue(params, paramName));
+						if (i < len - 1) {
+							paramNameBuilder.setLength(0);
+						}
+					}
+				} else {// 未处于参数区域
+					if (isParamBegin(a, b, c)) {
+						isParam = true;
+						paramNameBuilder.setLength(0);
+						paramNameBuilder.append(c);
+					} else if (isEmbedBegin(a, b, c)) {
+						isEmbed = true;
+						paramNameBuilder.setLength(0);
+						paramNameBuilder.append(c);
+					}
+				}
+			}
+			a = b;
+			b = c;
+			i++;
+		}
+		return usedParams;
+	}
+
 	/**
 	 * 删除前面的空白行
 	 * 
@@ -669,30 +758,30 @@ public abstract class DSLUtils {
 	private static final boolean processDSL(DSLContext context, StringBuilder scriptBuilder,
 			HashMap<Integer, StringBuilder> dslfBuilders, Object params, ParamGetter paramGetter,
 			Map<String, Object> usedParams, HashMap<Integer, Boolean> inValidParams,
-			HashMap<Integer, Set<String>> validParams, HashMap<Integer, Set<String>> embedParams,
+			HashMap<Integer, Map<String, Object>> validParamses, HashMap<Integer, Map<String, Object>> embedParams,
 			HashMap<Integer, Map<String, Object>> attributesMap, int deep, boolean emptyWhenNoMacro) {
+		Map<String, Object> validParams = validParamses.get(deep);
+		usedParams.putAll(validParams);
 		Map<String, Object> attributes = attributesMap.get(deep);
 		if (attributes == null) {
 			attributes = new HashMap<String, Object>();
 			attributesMap.put(deep, attributes);
 		}
-		Dslf dslf = MacroUtils.execute(context, attributes, dslfBuilders.get(deep), params, paramGetter,
-				emptyWhenNoMacro);
-		usedParams.putAll(dslf.getUsedParams());
+		Dslf dslf = MacroUtils.execute(context, attributes, dslfBuilders.get(deep), validParams, emptyWhenNoMacro);
 		boolean dslfAsScript = dslf.isDslfAsScript();
 		if (dslfAsScript || deep == 1) {
-			replaceEmbedParams(params, scriptBuilder, paramGetter, dslf, usedParams, embedParams, deep);
+			replaceEmbedParams(params, scriptBuilder, dslf, usedParams, embedParams, deep);
 		} else {
 			dslfBuilders.get(deep - 1).append(dslf.getValue());
 		}
 		dslfBuilders.remove(deep);
-		validParams.remove(deep);
+		validParamses.remove(deep);
 		inValidParams.remove(deep);
 		return dslfAsScript;
 	}
 
-	private static void replaceEmbedParams(Object params, StringBuilder scriptBuilder, ParamGetter paramGetter,
-			Dslf dslf, Map<String, Object> usedParams, HashMap<Integer, Set<String>> embedParams, int deep) {
+	private static void replaceEmbedParams(Object params, StringBuilder scriptBuilder, Dslf dslf,
+			Map<String, Object> usedParams, HashMap<Integer, Map<String, Object>> embedParams, int deep) {
 		if (dslf.isDslfAsScript()) {
 			scriptBuilder.setLength(0);
 		}
@@ -701,9 +790,12 @@ public abstract class DSLUtils {
 		} else {
 			String namedScript = dslf.getValue().toString();
 			Object value;
-			for (String name : embedParams.get(deep)) {
-				value = paramGetter.getValue(params, name);
-				namedScript = namedScript.replaceAll(EMBED_PREFIX + name, value == null ? "null" : value.toString());
+			Entry<String, Object> entry;
+			for (Iterator<Entry<String, Object>> it = embedParams.get(deep).entrySet().iterator(); it.hasNext();) {
+				entry = it.next();
+				value = entry.getValue();
+				namedScript = namedScript.replaceAll(EMBED_PREFIX + entry.getKey(),
+						value == null ? "null" : value.toString());
 			}
 			scriptBuilder.append(namedScript);
 		}
@@ -809,21 +901,17 @@ public abstract class DSLUtils {
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 	}
 
-	private static boolean isEmpty(Collection<?> c) {
-		return c == null || c.isEmpty();
-	}
-
 	private static ParamGetter getParamGetter(DSLContext context) {
 		List<ParamsConverter<?>> paramsConverters = context.getParamsConverters();
 		List<ParamsFilter> paramsFilters = context.getParamsFilters();
-		if (isEmpty(paramsConverters)) {
-			if (isEmpty(paramsFilters)) {
+		if (CollectionUtils.isEmpty(paramsConverters)) {
+			if (CollectionUtils.isEmpty(paramsFilters)) {
 				return SimpleParamGetter.getInstance();
 			} else {
 				return new FilterAbleParamGetter(paramsFilters);
 			}
 		} else {
-			if (isEmpty(paramsFilters)) {
+			if (CollectionUtils.isEmpty(paramsFilters)) {
 				return new ConvertAbleParamGetter(paramsConverters);
 			} else {
 				return new FullFeaturesParamGetter(paramsConverters, paramsFilters);
@@ -934,11 +1022,11 @@ public abstract class DSLUtils {
 			for (int i = 0, size = paramsFilters.size(); i < size; i++) {
 				paramsFilter = paramsFilters.get(i);
 				if (paramsFilter.determine(paramName, value)) {
+					filteredParams.add(paramName);
 					value = null;
 					break;
 				}
 			}
-			filteredParams.add(paramName);
 			return value;
 		}
 

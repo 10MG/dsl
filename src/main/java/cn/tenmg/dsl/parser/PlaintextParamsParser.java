@@ -31,11 +31,11 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 			appendNull(scriptBuilder);
 		} else {
 			if (value instanceof Collection<?>) {
-				Collection<?> collection = (Collection<?>) value;
-				if (collection.isEmpty()) {
+				Collection<?> c = (Collection<?>) value;
+				if (c.isEmpty()) {
 					appendNull(scriptBuilder);
 				} else {
-					Iterator<?> it = collection.iterator();
+					Iterator<?> it = c.iterator();
 					append(scriptBuilder, it.next());
 					while (it.hasNext()) {
 						scriptBuilder.append(DSLUtils.COMMA).append(DSLUtils.BLANK_SPACE);

@@ -9,6 +9,7 @@ import javax.script.ScriptEngineManager;
 import cn.tenmg.dsl.DSLContext;
 import cn.tenmg.dsl.Macro;
 import cn.tenmg.dsl.utils.DSLUtils;
+import cn.tenmg.dsl.utils.MapUtils;
 
 /**
  * 可运行脚本的宏
@@ -28,7 +29,7 @@ public abstract class ScriptableMacro implements Macro {
 	public boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
 			Map<String, Object> params) throws Exception {
 		ScriptEngine scriptEngine = SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
-		if (params != null && !params.isEmpty()) {
+		if (MapUtils.isNotEmpty(params)) {
 			for (Entry<String, Object> entry : params.entrySet()) {
 				scriptEngine.put(entry.getKey(), entry.getValue());
 			}

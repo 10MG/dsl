@@ -12,6 +12,14 @@ import java.util.Map;
  */
 public abstract class MapUtils {
 
+	public static boolean isEmpty(Map<?, ?> m) {
+		return m == null || m.isEmpty();
+	}
+
+	public static boolean isNotEmpty(Map<?, ?> m) {
+		return m != null && !m.isEmpty();
+	}
+
 	public static <K, V> HashMap<K, V> newHashMap(K key, V value) {
 		HashMap<K, V> map = new HashMap<K, V>();
 		map.put(key, value);

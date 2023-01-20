@@ -46,7 +46,6 @@ public class BlankParamsFilter implements ParamsFilter {
 				return true;
 			}
 		}
-
 		return false;
 	}
 
