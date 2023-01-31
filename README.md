@@ -419,6 +419,8 @@ resources
              └─cn.tenmg.dsl.Macro
 ```
 
+添加配置内容，如下：
+
 ```
 mypackage.MyMacro
 ```
