@@ -1,7 +1,9 @@
 package cn.tenmg.dsl.utils;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Map工具类
@@ -20,10 +22,30 @@ public abstract class MapUtils {
 		return m != null && !m.isEmpty();
 	}
 
+	/**
+	 * 使用键集合移除指定查找表中的元素
+	 * 
+	 * @param map
+	 *            指定查找表
+	 * @param keys
+	 *            键集合
+	 */
+	public static <K> void removeAll(Map<K, ?> map, Set<K> keys) {
+		for (Iterator<?> it = keys.iterator(); it.hasNext();) {
+			map.remove(it.next());
+		}
+	}
+
 	public static <K, V> HashMap<K, V> newHashMap(K key, V value) {
 		HashMap<K, V> map = new HashMap<K, V>();
 		map.put(key, value);
 		return map;
+	}
+	
+	public static <K, V> HashMap<K, V> toHashMap(Map<K, V> map) {
+		HashMap<K, V> copy = new HashMap<K, V>(map.size());
+		copy.putAll(map);
+		return copy;
 	}
 
 	public static <K, V> HashMap<K, V> newHashMap(int initialCapacity, K key, V value) {
@@ -34,6 +56,12 @@ public abstract class MapUtils {
 
 	public static <K, V> MapBuilder<K, V> newMapBuilder(Map<K, V> map) {
 		return new MapBuilder<K, V>(map);
+	}
+
+	public static <K, V> MapBuilder<K, V> toHashMapBuilder(Map<K, V> map) {
+		Map<K, V> copy = new HashMap<K, V>(map.size());
+		copy.putAll(map);
+		return new MapBuilder<K, V>(copy);
 	}
 
 	public static <K, V> MapBuilder<K, V> newHashMapBuilder(K key, V value) {
@@ -70,7 +98,7 @@ public abstract class MapUtils {
 		 * 
 		 * @param map
 		 *            指定查找表
-		 * @return 返回HashMapKit对象
+		 * @return MapBuilder对象
 		 */
 		public MapBuilder<K, V> putAll(Map<K, V> map) {
 			if (map != null) {
@@ -86,7 +114,7 @@ public abstract class MapUtils {
 		 *            键
 		 * @param value
 		 *            值
-		 * @return 返回HashMapKit对象
+		 * @return MapBuilder对象
 		 */
 		public MapBuilder<K, V> put(K key, V value) {
 			map.put(key, value);
@@ -94,11 +122,21 @@ public abstract class MapUtils {
 		}
 
 		/**
-		 * 返回构建的Map对象
+		 * 构建并返回Map对象
 		 * 
-		 * @return 返回构建的Map对象
+		 * @return 构建的Map对象
 		 */
 		public Map<K, V> build() {
+			return map;
+		}
+
+		/**
+		 * 构建并返回Map对象
+		 * 
+		 * @return 构建的Map对象
+		 */
+		public Map<K, V> build(K key, V value) {
+			map.put(key, value);
 			return map;
 		}
 
@@ -107,8 +145,8 @@ public abstract class MapUtils {
 		 * 
 		 * @return 返回构建的Map对象
 		 */
-		public Map<K, V> build(K key, V value) {
-			map.put(key, value);
+		public Map<K, V> build(Map<K, V> map) {
+			map.putAll(map);
 			return map;
 		}
 

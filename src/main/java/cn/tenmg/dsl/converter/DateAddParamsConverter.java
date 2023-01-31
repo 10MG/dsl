@@ -18,9 +18,9 @@ import cn.tenmg.dsl.utils.MapUtils;
 public class DateAddParamsConverter extends AbstractParamsConverter<Object> {
 
 	private static final Map<String, Integer> fields = MapUtils.newMapBuilder(new HashMap<String, Integer>(7))
-			.put("millisecond", Calendar.MILLISECOND).put("second", Calendar.SECOND).put("minute", Calendar.MINUTE)
-			.put("hour", Calendar.HOUR).put("day", Calendar.DATE).put("month", Calendar.MONTH)
-			.build("year", Calendar.YEAR);
+			.put(Unit.MILLISECOND, Calendar.MILLISECOND).put(Unit.SECOND, Calendar.SECOND)
+			.put(Unit.MINUTE, Calendar.MINUTE).put(Unit.HOUR, Calendar.HOUR).put(Unit.DAY, Calendar.DATE)
+			.put(Unit.MONTH, Calendar.MONTH).build(Unit.YEAR, Calendar.YEAR);
 
 	private int amount;
 
@@ -51,6 +51,13 @@ public class DateAddParamsConverter extends AbstractParamsConverter<Object> {
 			}
 		}
 		return value;
+	}
+
+	public static final class Unit {
+
+		public static final String MILLISECOND = "millisecond", SECOND = "second", MINUTE = "minute", HOUR = "hour",
+				DAY = "day", MONTH = "month", YEAR = "year";
+
 	}
 
 }
