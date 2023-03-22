@@ -615,6 +615,17 @@ public abstract class DSLUtils {
 		}
 	}
 
+	/**
+	 * 获取含命名参数的脚本中使用的参数集
+	 * 
+	 * @param paramGetter
+	 *            参数获取器
+	 * @param namedscript
+	 *            含命名参数的脚本
+	 * @param params
+	 *            参数集
+	 * @return 含命名参数的脚本中使用的参数集
+	 */
 	public static Map<String, Object> getUsedParams(ParamGetter paramGetter, CharSequence namedscript, Object params) {
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		String paramName;
@@ -701,6 +712,53 @@ public abstract class DSLUtils {
 			i++;
 		}
 		return usedParams;
+	}
+
+	/**
+	 * 使用参数过转换器对参数表进行浅层转换。浅层转换是指，仅转换表层参数，但不会转换嵌在表层参数内部的属性。
+	 * 
+	 * @param paramsConverters
+	 *            参数转换器
+	 * @param params
+	 *            参数集
+	 */
+	@SuppressWarnings("unchecked")
+	public static void convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> params) {
+		Object value;
+		String paramName;
+		Entry<String, ?> entry;
+		for (Iterator<?> it = params.entrySet().iterator(); it.hasNext();) {
+			entry = (Entry<String, ?>) it.next();
+			paramName = entry.getKey();
+			value = convert(paramsConverters, paramName, entry.getValue());
+			params.put(paramName, convert(paramsConverters, paramName, value));
+		}
+	}
+
+	/**
+	 * 使用参数过滤器对参数表进行浅层过滤。浅层过滤是指，仅过滤表层参数，但不会过滤嵌在表层参数内部的属性。
+	 * 
+	 * @param paramsFilters
+	 *            参数过滤器
+	 * @param params
+	 *            参数表
+	 */
+	@SuppressWarnings("unchecked")
+	public static void filter(List<ParamsFilter> paramsFilters, Map<String, Object> params) {
+		Object value;
+		String paramName;
+		Entry<String, ?> entry;
+		Set<String> filteredParams = new HashSet<String>();
+		for (Iterator<?> it = params.entrySet().iterator(); it.hasNext();) {
+			entry = (Entry<String, ?>) it.next();
+			paramName = entry.getKey();
+			value = entry.getValue();
+			if (filtered(paramsFilters, filteredParams, paramName, value)) {
+				it.remove();
+				filteredParams.add(paramName);
+				break;
+			}
+		}
 	}
 
 	/**
@@ -901,6 +959,74 @@ public abstract class DSLUtils {
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 	}
 
+	/**
+	 * 将指定参数进行转换
+	 * 
+	 * @param paramsConverters
+	 *            参数转换器
+	 * @param paramName
+	 *            参数名
+	 * @param value
+	 *            参数值
+	 * @return 转换后的参数值
+	 */
+	private static Object convert(List<ParamsConverter<?>> paramsConverters, String paramName, Object value) {
+		ParamsConverter<?> paramsConverter;
+		for (int i = 0, size = paramsConverters.size(); i < size; i++) {
+			paramsConverter = paramsConverters.get(i);
+			if (paramsConverter.determine(paramName)) {
+				value = paramsConverter.convert(value);
+			}
+		}
+		return value;
+	}
+
+	/**
+	 * 将指定参数进行转换
+	 * 
+	 * @param paramsConverters
+	 *            参数转换器
+	 * @param convertedParams
+	 *            已转换参数集
+	 * @param paramName
+	 *            参数名
+	 * @param value
+	 *            参数值
+	 * @return 转换后的参数值
+	 */
+	private static Object convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> convertedParams,
+			String paramName, Object value) {
+		value = convert(paramsConverters, paramName, value);
+		convertedParams.put(paramName, value);
+		return value;
+	}
+
+	/**
+	 * 确定参数是否需要过滤掉
+	 * 
+	 * @param paramsFilters
+	 *            参数过滤器
+	 * @param filteredParams
+	 *            已过滤参数
+	 * @param paramName
+	 *            参数名
+	 * @param value
+	 *            参数值
+	 * @return 如果该参数需要被过滤掉则返回{@code true}，否则返回{@code false}
+	 */
+	private static boolean filtered(List<ParamsFilter> paramsFilters, Set<String> filteredParams, String paramName,
+			Object value) {
+		ParamsFilter paramsFilter;
+		for (int i = 0, size = paramsFilters.size(); i < size; i++) {
+			paramsFilter = paramsFilters.get(i);
+			if (paramsFilter.determine(paramName, value)) {
+				filteredParams.add(paramName);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static ParamGetter getParamGetter(DSLContext context) {
 		List<ParamsConverter<?>> paramsConverters = context.getParamsConverters();
 		List<ParamsFilter> paramsFilters = context.getParamsFilters();
@@ -966,24 +1092,11 @@ public abstract class DSLUtils {
 
 		@Override
 		public Object getValue(Object params, String paramName) {
-			return convert(paramsConverters, convertedParams, params, paramName);
-		}
-
-		public static Object convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> convertedParams,
-				Object params, String paramName) {
 			if (convertedParams.containsKey(paramName)) {
 				return convertedParams.get(paramName);
 			}
-			Object value = ObjectUtils.getValueIgnoreException(params, paramName);
-			ParamsConverter<?> paramsConverter;
-			for (int i = 0, size = paramsConverters.size(); i < size; i++) {
-				paramsConverter = paramsConverters.get(i);
-				if (paramsConverter.determine(paramName)) {
-					value = paramsConverter.convert(value);
-				}
-			}
-			convertedParams.put(paramName, value);
-			return value;
+			return convert(paramsConverters, convertedParams, paramName,
+					ObjectUtils.getValueIgnoreException(params, paramName));
 		}
 
 	}
@@ -1009,23 +1122,9 @@ public abstract class DSLUtils {
 
 		@Override
 		public Object getValue(Object params, String paramName) {
-			if (filteredParams.contains(paramName)) {
+			Object value = ObjectUtils.getValueIgnoreException(params, paramName);
+			if (filteredParams.contains(paramName) || filtered(paramsFilters, filteredParams, paramName, value)) {
 				return null;
-			}
-			return filter(paramsFilters, filteredParams, paramName,
-					ObjectUtils.getValueIgnoreException(params, paramName));
-		}
-
-		public static Object filter(List<ParamsFilter> paramsFilters, Set<String> filteredParams, String paramName,
-				Object value) {
-			ParamsFilter paramsFilter;
-			for (int i = 0, size = paramsFilters.size(); i < size; i++) {
-				paramsFilter = paramsFilters.get(i);
-				if (paramsFilter.determine(paramName, value)) {
-					filteredParams.add(paramName);
-					value = null;
-					break;
-				}
 			}
 			return value;
 		}
@@ -1058,11 +1157,15 @@ public abstract class DSLUtils {
 
 		@Override
 		public Object getValue(Object params, String paramName) {
+			if (convertedParams.containsKey(paramName)) {
+				return convertedParams.get(paramName);
+			}
 			if (filteredParams.contains(paramName)) {
 				return null;
 			}
-			return FilterAbleParamGetter.filter(paramsFilters, filteredParams, paramName,
-					ConvertAbleParamGetter.convert(paramsConverters, convertedParams, params, paramName));
+			Object value = convert(paramsConverters, convertedParams, paramName,
+					ObjectUtils.getValueIgnoreException(params, paramName));
+			return filtered(paramsFilters, filteredParams, paramName, value) ? null : value;
 		}
 
 	}
