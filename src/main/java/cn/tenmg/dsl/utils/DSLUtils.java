@@ -504,7 +504,7 @@ public abstract class DSLUtils {
 			} else if (isMiltilineComment) {// 多行注释内
 				commentBuilder.append(c);
 				if (isMiltilineCommentEnd(b, c)) {
-					isSinglelineComment = false;
+					isMiltilineComment = false;
 					scriptBuilder.append(commentBuilder);
 					commentBuilder.setLength(0);
 				}
@@ -630,7 +630,7 @@ public abstract class DSLUtils {
 		Map<String, Object> usedParams = new HashMap<String, Object>();
 		String paramName;
 		int i = 0, len = namedscript.length(), backslashes = 0;// 连续反斜杠数
-		char a = DSLUtils.BLANK_SPACE, b = a, c;
+		char a = BLANK_SPACE, b = a, c;
 		boolean isString = false, // 是否在字符串区域
 				isSinglelineComment = false, // 是否在单行注释区域
 				isMiltilineComment = false, // 是否在多行注释区域
@@ -640,25 +640,25 @@ public abstract class DSLUtils {
 		while (i < len) {
 			c = namedscript.charAt(i);
 			if (isString) {// 字符串内
-				if (c == DSLUtils.BACKSLASH) {
+				if (c == BACKSLASH) {
 					backslashes++;
 				} else {
-					if (DSLUtils.isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+					if (isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
 						isString = false;
 					}
 					backslashes = 0;
 				}
 			} else if (isSinglelineComment) {// 单行注释内
-				if (c == DSLUtils.LINE_BREAK) {
+				if (c == LINE_BREAK) {
 					isSinglelineComment = false;
 				}
 			} else if (isMiltilineComment) {// 多行注释内
-				if (DSLUtils.isMiltilineCommentEnd(b, c)) {
+				if (isMiltilineCommentEnd(b, c)) {
 					isMiltilineComment = false;
 				}
-			} else if (c == DSLUtils.SINGLE_QUOTATION_MARK) {// 字符串区域开始
+			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
 				isString = true;
-			} else if (DSLUtils.isSinglelineCommentBegin(b, c)) {// 单行注释开始
+			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
 				isSinglelineComment = true;
 			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
 				isMiltilineComment = true;
@@ -712,6 +712,81 @@ public abstract class DSLUtils {
 			i++;
 		}
 		return usedParams;
+	}
+
+	/**
+	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的单行注释的开始位置
+	 * 
+	 * @param b
+	 *            前一字符
+	 * @param c
+	 *            当前字符
+	 * @return 如果当前为脚本的单行注释的开始位置，则返回 {@code true}，否则返回 {@code false}
+	 */
+	public static boolean isSinglelineCommentBegin(char b, char c) {
+		for (int i = 0; i < SINGLELINE_COMMENT_PREFIXES.length; i++) {
+			char[] singlelineCommentPrefix = SINGLELINE_COMMENT_PREFIXES[i];
+			if (singlelineCommentPrefix.length > 1) {
+				if (b == singlelineCommentPrefix[0] && c == singlelineCommentPrefix[1]) {
+					return true;
+				}
+			} else {
+				if (c == singlelineCommentPrefix[0]) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的多行注释的开始位置
+	 * 
+	 * @param b
+	 *            前一字符
+	 * @param c
+	 *            当前字符
+	 * @return 如果当前为脚本的多行注释的开始位置，则返回 {@code true}，否则返回 {@code false}
+	 */
+	public static boolean isMiltilineCommentBegin(char b, char c) {
+		for (int i = 0; i < MILTILINE_COMMENT_PREFIXES.length; i++) {
+			char[] multilineCommentPrefix = MILTILINE_COMMENT_PREFIXES[i];
+			if (multilineCommentPrefix.length > 1) {
+				if (b == multilineCommentPrefix[0] && c == multilineCommentPrefix[1]) {
+					return true;
+				}
+			} else {
+				if (c == multilineCommentPrefix[0]) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的多行注释的结束位置
+	 * 
+	 * @param b
+	 *            前一字符
+	 * @param c
+	 *            当前字符
+	 * @return 如果当前为脚本的多行注释的结束位置，则返回 {@code true}，否则返回 {@code false}
+	 */
+	public static boolean isMiltilineCommentEnd(char b, char c) {
+		for (int i = 0; i < MILTILINE_COMMENT_SUFFIXES.length; i++) {
+			char[] multilineCommentSuffix = MILTILINE_COMMENT_SUFFIXES[i];
+			if (multilineCommentSuffix.length > 1) {
+				if (b == multilineCommentSuffix[0] && c == multilineCommentSuffix[1]) {
+					return true;
+				}
+			} else {
+				if (c == multilineCommentSuffix[0]) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -857,54 +932,6 @@ public abstract class DSLUtils {
 			}
 			scriptBuilder.append(namedScript);
 		}
-	}
-
-	private static boolean isSinglelineCommentBegin(char b, char c) {
-		for (int i = 0; i < SINGLELINE_COMMENT_PREFIXES.length; i++) {
-			char[] singlelineCommentPrefix = SINGLELINE_COMMENT_PREFIXES[i];
-			if (singlelineCommentPrefix.length > 1) {
-				if (b == singlelineCommentPrefix[0] && c == singlelineCommentPrefix[1]) {
-					return true;
-				}
-			} else {
-				if (c == singlelineCommentPrefix[0]) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	private static boolean isMiltilineCommentBegin(char b, char c) {
-		for (int i = 0; i < MILTILINE_COMMENT_PREFIXES.length; i++) {
-			char[] multilineCommentPrefix = MILTILINE_COMMENT_PREFIXES[i];
-			if (multilineCommentPrefix.length > 1) {
-				if (b == multilineCommentPrefix[0] && c == multilineCommentPrefix[1]) {
-					return true;
-				}
-			} else {
-				if (c == multilineCommentPrefix[0]) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	private static boolean isMiltilineCommentEnd(char b, char c) {
-		for (int i = 0; i < MILTILINE_COMMENT_SUFFIXES.length; i++) {
-			char[] multilineCommentSuffix = MILTILINE_COMMENT_SUFFIXES[i];
-			if (multilineCommentSuffix.length > 1) {
-				if (b == multilineCommentSuffix[0] && c == multilineCommentSuffix[1]) {
-					return true;
-				}
-			} else {
-				if (c == multilineCommentSuffix[0]) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	/**
