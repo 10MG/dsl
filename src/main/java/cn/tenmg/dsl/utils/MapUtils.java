@@ -216,6 +216,35 @@ public abstract class MapUtils {
 	}
 
 	/**
+	 * 创建一个键类型为 {@code keyType}、值类型为 {@code valueType} 的
+	 * {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param keyType
+	 *            键类型
+	 * @param valueType
+	 *            值类型
+	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType, Class<V> valueType) {
+		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>());
+	}
+
+	/**
+	 * 创建一个键类型为 {@code keyType}、值类型为 {@code valueType}，初始容量为 {@code initialCapacity}
+	 * 的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param keyType
+	 *            键类型
+	 * @param initialCapacity
+	 *            初始容量
+	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType, Class<V> valueType,
+			int initialCapacity) {
+		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>(initialCapacity));
+	}
+
+	/**
 	 * 查找表构建器
 	 * 
 	 * @author June wjzhao@aliyun.com
@@ -275,6 +304,10 @@ public abstract class MapUtils {
 
 		/**
 		 * 将
+<<<<<<< Upstream, based on branch 'master' of https://gitee.com/tenmg/dsl.git
+=======
+		 * 
+>>>>>>> fd26d98 增加两个指定值类型的构建Map的方法
 		 * @param key
 		 * @param value
 		 * @return
