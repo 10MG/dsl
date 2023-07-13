@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +46,7 @@ public class DSLUtilsTest {
 				emptyString = "", blankSpace = " ", expectedAfterWrap = StringUtils.concat("%", staffName, "%");
 		int state = 1, eq = 0, noteq = 1, gt = 1, notgt = 0, gte = 0, notgte = -1, lt = -1, notlt = 0, lte = 0,
 				notlte = 1, others = 9, limit = 500;
-		Map<String, Object> params = MapUtils.newMapBuilder(new HashMap<String, Object>()).put("enabled", enabled)
+		Map<String, Object> params = MapUtils.newHashMapBuilder(String.class).put("enabled", enabled)
 				.put("state", state).put("beginDate", beginDate).put("endDate", endDate).put("positions", positions)
 				.put("staffName", staffName).put("null", nullValue).put("emptyString", emptyString)
 				.put("blankSpace", blankSpace).put("eq", eq).put("noteq", noteq).put("gt", gt).put("notgt", notgt)

@@ -294,7 +294,7 @@ public abstract class MapUtils {
 		}
 
 		/**
-		 * 构建并返回查找表对象
+		 * 返回构建的查找表对象
 		 * 
 		 * @return 构建的查找表对象
 		 */
@@ -303,10 +303,13 @@ public abstract class MapUtils {
 		}
 
 		/**
-		 * 将
+		 * 向查找表构建器存入一个键为 {@code key}，值为 {@code value} 的元素后返回构建的查找表对象
+		 * 
 		 * @param key
+		 *            键
 		 * @param value
-		 * @return
+		 *            值
+		 * @return 构建的查找表对象
 		 */
 		public M build(K key, V value) {
 			map.put(key, value);
@@ -314,9 +317,9 @@ public abstract class MapUtils {
 		}
 
 		/**
-		 * 返回构建的Map对象
+		 * 返回构建的查找表对象
 		 * 
-		 * @return 返回构建的Map对象
+		 * @return 返回构建的查找表对象
 		 */
 		public M build(Map<K, V> map) {
 			this.map.putAll(map);
