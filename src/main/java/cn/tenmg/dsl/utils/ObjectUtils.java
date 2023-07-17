@@ -5,9 +5,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -134,7 +137,7 @@ public abstract class ObjectUtils {
 		String methodName = toMethodName(SET, fieldName);
 		List<Method> methods = getSetMethods(type).get(methodName);
 		if (methods == null) {
-			Field field = getFields(type).get(fieldName);
+			Field field = getFields(type, object).get(fieldName);
 			if (field == null) {
 				if (throwWhenAbsent) {
 					throw new IllegalArgumentException(StringUtils.concat("There is no suitable method named ",
@@ -149,7 +152,7 @@ public abstract class ObjectUtils {
 			if (size == 1) {
 				return methods.get(0).getParameterTypes()[0];
 			} else {
-				Field field = getFields(type).get(fieldName);
+				Field field = getFields(type, object).get(fieldName);
 				if (field == null) {
 					if (throwWhenAbsent) {
 						throw new IllegalArgumentException(StringUtils.concat("There is no field named ", fieldName,
@@ -253,7 +256,7 @@ public abstract class ObjectUtils {
 			Class<?> type = object.getClass();
 			Method method = getGetMethods(type).get(toMethodName(GET, fieldName));
 			if (method == null) {
-				Field field = getFields(type).get(fieldName);
+				Field field = getFields(type, object).get(fieldName);
 				if (field == null) {
 					return null;
 				} else {
@@ -455,21 +458,38 @@ public abstract class ObjectUtils {
 	 *            指定类型
 	 * @return 字段名为键字段为值的对照表
 	 */
-	private static Map<String, Field> getFields(Class<?> type) {
+	private static Map<String, Field> getFields(Class<?> type, Object object) {
 		Map<String, Field> fields = fieldMap.get(type);
 		if (fields == null) {
 			synchronized (fieldMap) {
 				fields = fieldMap.get(type);
 				if (fields == null) {
+					String fieldName;
 					fields = new HashMap<String, Field>();
+					Set<String> excludedFields = getExcludedFields(type);
 					while (!type.equals(Object.class)) {
 						Field[] declaredFields = type.getDeclaredFields();
 						for (int i = 0; i < declaredFields.length; i++) {
 							Field field = declaredFields[i];
-							if (!field.isAccessible() && !Modifier.isFinal(field.getModifiers())) {
-								field.setAccessible(true);
+							fieldName = field.getName();
+							if (!excludedFields.contains(fieldName)) {
+								if (!Modifier.isFinal(field.getModifiers())) {// 非 final 属性
+									try {
+										field.getClass().getMethod("trySetAccessible").invoke(field);
+									} catch (NoSuchMethodException e) {
+										try {
+											if (!(boolean) field.getClass().getMethod("isAccessible").invoke(field)) {// JDK8及以下
+												field.setAccessible(true);
+											}
+										} catch (Exception ex) {
+											// 似乎也干不了啥
+										}
+									} catch (Exception e) {
+										// 似乎也干不了啥
+									}
+								}
+								fields.put(field.getName(), field);
 							}
-							fields.put(field.getName(), field);
 						}
 						type = type.getSuperclass();
 					}
@@ -478,6 +498,31 @@ public abstract class ObjectUtils {
 			}
 		}
 		return fields;
+	}
+
+	/**
+	 * 获取需排除的属性名集
+	 * 
+	 * @param type
+	 *            类型
+	 * @return 需排除的属性名集
+	 */
+	private static Set<String> getExcludedFields(Class<?> type) {
+		Set<String> excludedFields = new HashSet<String>();// 排除的属性
+		Map<String, Method> getMethods = getGetMethods(type);
+		if (MapUtils.isNotEmpty(getMethods)) {
+			Map<String, List<Method>> setMethods = getSetMethods(type);
+			if (MapUtils.isNotEmpty(setMethods)) {
+				String fieldName;
+				for (Iterator<String> it = getMethods.keySet().iterator(); it.hasNext();) {
+					fieldName = it.next().substring(3);
+					if (setMethods.containsKey(SET.concat(fieldName))) {// 排除含有完整 getter、setter 的属性
+						excludedFields.add(StringUtils.toCamelCase(fieldName, null, false));
+					}
+				}
+			}
+		}
+		return excludedFields;
 	}
 
 	/**
@@ -651,7 +696,7 @@ public abstract class ObjectUtils {
 			String methodName = toMethodName(SET, fieldName);
 			List<Method> methods = getSetMethods(type).get(methodName);
 			if (methods == null) {
-				Field field = getFields(type).get(fieldName);
+				Field field = getFields(type, object).get(fieldName);
 				if (field == null) {
 					if (throwWhenAbsent) {
 						throw new IllegalArgumentException(StringUtils.concat("There is no suitable method named ",
@@ -667,7 +712,7 @@ public abstract class ObjectUtils {
 				} else {
 					Method method = getBestSetMethod(type, methods, methodName, value);
 					if (method == null) {
-						Field field = getFields(type).get(fieldName);
+						Field field = getFields(type, object).get(fieldName);
 						if (field == null) {
 							if (throwWhenAbsent) {
 								throw new IllegalArgumentException(
@@ -716,7 +761,7 @@ public abstract class ObjectUtils {
 				String methodName = toMethodName(SET, attribute);
 				List<Method> setMethods = getSetMethods(type).get(methodName);
 				if (setMethods == null) {
-					Field field = getFields(type).get(attribute);
+					Field field = getFields(type, parent).get(attribute);
 					if (field == null) {
 						if (throwWhenAbsent) {
 							throw new IllegalArgumentException(StringUtils.concat("There is no set method named ",

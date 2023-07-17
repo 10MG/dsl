@@ -19,7 +19,7 @@ public abstract class CompareableParamsFilter implements ParamsFilter {
 	 * 将比较值转换为参数值的类型时是否抛出异常
 	 */
 	private static final boolean TYPE_CONVERT_EXCEPTION = Boolean
-			.valueOf(ConfigUtils.getProperty("filter.type_convert_exception", "false"));
+			.valueOf(ConfigUtils.getProperty("filter.type-convert-exception", "false"));
 
 	private static final String TYPE_CONVERT_METHOD = "valueOf";
 

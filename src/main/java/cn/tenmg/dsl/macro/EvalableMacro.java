@@ -1,40 +1,55 @@
 package cn.tenmg.dsl.macro;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import cn.tenmg.dsl.DSLContext;
+import cn.tenmg.dsl.EvalEngine;
 import cn.tenmg.dsl.Macro;
+import cn.tenmg.dsl.eval.JavaScriptEngine;
+import cn.tenmg.dsl.utils.ConfigUtils;
 import cn.tenmg.dsl.utils.DSLUtils;
 import cn.tenmg.dsl.utils.MapUtils;
+import cn.tenmg.dsl.utils.StringUtils;
 
 /**
  * 可运行脚本的宏
  * 
  * @author June wjzhao@aliyun.com
  * 
- * @since 1.2.3
+ * @since 1.4.0
  */
-public abstract class ScriptableMacro implements Macro {
+@SuppressWarnings("unchecked")
+public abstract class EvalableMacro implements Macro {
 
-	/**
-	 * 脚本引擎管理器
-	 */
-	protected static final ScriptEngineManager SCRIPT_ENGINE_MANAGER = new ScriptEngineManager();
+	private static Class<? extends EvalEngine> evalEngineClass;
+
+	static {
+		String className = ConfigUtils.getProperty("macro.eval-engine");
+		if (StringUtils.isBlank(className)) {
+			evalEngineClass = JavaScriptEngine.class;
+		} else {
+			try {
+				evalEngineClass = (Class<EvalEngine>) Class.forName(className);
+			} catch (Exception e) {
+				evalEngineClass = JavaScriptEngine.class;
+			}
+		}
+	}
 
 	@Override
 	public boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
 			Map<String, Object> params) throws Exception {
-		ScriptEngine scriptEngine = SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
+		EvalEngine evalEngine = evalEngineClass.getConstructor().newInstance();
 		if (MapUtils.isNotEmpty(params)) {
-			for (Entry<String, Object> entry : params.entrySet()) {
-				scriptEngine.put(entry.getKey(), entry.getValue());
+			Entry<String, Object> entry;
+			for (Iterator<Entry<String, Object>> it = params.entrySet().iterator(); it.hasNext();) {
+				entry = it.next();
+				evalEngine.put(entry.getKey(), entry.getValue());
 			}
 		}
-		return this.excute(scriptEngine, context, attributes, logic, dslf);
+		return this.excute(evalEngine, context, attributes, logic, dslf);
 	}
 
 	/**
@@ -44,7 +59,7 @@ public abstract class ScriptableMacro implements Macro {
 	 *            带参数的字符串代码
 	 * @return 可执行的代码
 	 */
-	protected static String toExecutable(String code) {
+	protected static String toEvalable(String code) {
 		int backslashes = 0;
 		boolean isString = false;// 是否在字符串区域
 		boolean isParam = false;// 是否在参数区域
@@ -86,8 +101,8 @@ public abstract class ScriptableMacro implements Macro {
 	/**
 	 * 执行宏并解析DSL动态片段。如果返回结果为{@code true}，则DSL解析立即终止，并以当前宏解析DSL动态片段的结果为DSL解析的最终结果；否则，将当前宏解析的DSL片段结果拼接到DSL的主解析结果中，并继续后续解析。
 	 * 
-	 * @param scriptEngine
-	 *            脚本引擎
+	 * @param evalEngine
+	 *            代码执行引擎
 	 * @param context
 	 *            DSL上下文
 	 * @param attributes
@@ -99,6 +114,6 @@ public abstract class ScriptableMacro implements Macro {
 	 * @return 如果返回结果为{@code true}，则DSL解析立即终止，并以当前宏解析DSL动态片段的结果为DSL解析的最终结果；否则，将当前宏解析的DSL片段结果拼接到DSL的主解析结果中，并继续后续解析。
 	 * @throws Exception
 	 */
-	abstract boolean excute(ScriptEngine scriptEngine, DSLContext context, Map<String, Object> attributes, String logic,
+	abstract boolean excute(EvalEngine evalEngine, DSLContext context, Map<String, Object> attributes, String logic,
 			StringBuilder dslf) throws Exception;
 }

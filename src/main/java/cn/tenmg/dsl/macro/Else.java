@@ -2,9 +2,8 @@ package cn.tenmg.dsl.macro;
 
 import java.util.Map;
 
-import javax.script.ScriptEngine;
-
 import cn.tenmg.dsl.DSLContext;
+import cn.tenmg.dsl.EvalEngine;
 
 /**
  * else判断宏
@@ -13,10 +12,10 @@ import cn.tenmg.dsl.DSLContext;
  *
  * @since 1.0.0
  */
-public class Else extends ScriptableMacro {
+public class Else extends EvalableMacro {
 
 	@Override
-	boolean excute(ScriptEngine scriptEngine, DSLContext context, Map<String, Object> attributes, String logic,
+	boolean excute(EvalEngine evalEngine, DSLContext context, Map<String, Object> attributes, String logic,
 			StringBuilder dslf) throws Exception {
 		if (Boolean.TRUE.equals(attributes.get("if"))) {
 			dslf.setLength(0);
