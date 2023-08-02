@@ -1,5 +1,10 @@
 package cn.tenmg.dsl.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -210,6 +215,52 @@ public abstract class ObjectUtils {
 				setValue(object, attribute.substring(0, index), attribute.substring(index + 1), value, throwWhenAbsent);
 			} else {
 				setValueInner(object, attribute, value, throwWhenAbsent);
+			}
+		}
+	}
+
+	/**
+	 * 克隆对象
+	 * 
+	 * @param obj
+	 *            对象
+	 * @return
+	 * @throws IOException
+	 *             I/O异常
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T clone(T obj) throws IOException {
+		if (obj == null) {
+			return null;
+		}
+		ByteArrayOutputStream bo = null;
+		ObjectOutputStream oo = null;
+		ByteArrayInputStream bi = null;
+		ObjectInputStream oi = null;
+		try {
+			bo = new ByteArrayOutputStream();
+			oo = new ObjectOutputStream(bo);
+			oo.writeObject(obj);
+			bi = new ByteArrayInputStream(bo.toByteArray());
+			oi = new ObjectInputStream(bi);
+			try {
+				return (T) oi.readObject();
+			} catch (ClassNotFoundException e) {
+				// 理应不会出现这个异常，如果类不存在，则无法编译
+				return null;
+			}
+		} finally {
+			if (bo != null) {
+				bo.close();
+			}
+			if (oo != null) {
+				oo.close();
+			}
+			if (bi != null) {
+				bi.close();
+			}
+			if (oi != null) {
+				oi.close();
 			}
 		}
 	}

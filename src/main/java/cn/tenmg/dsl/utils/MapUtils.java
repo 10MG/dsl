@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Map工具类
@@ -86,19 +87,6 @@ public abstract class MapUtils {
 	}
 
 	/**
-	 * 将一个 {@code Map<K, V>} 对象转换为一个 {@code HashMap<K, V>} 对象。
-	 * 
-	 * @param map
-	 *            {@code Map<K, V>} 对象
-	 * @return 新建的 {@code HashMap<K, V>} 对象。
-	 */
-	public static <K, V> HashMap<K, V> toHashMap(Map<K, V> map) {
-		HashMap<K, V> copy = new HashMap<K, V>(map.size());
-		copy.putAll(map);
-		return copy;
-	}
-
-	/**
 	 * 创建一个初始容量为 {@code initialCapacity}，且含有一个键为 {@code key}、值为 {@code value} 元素的
 	 * {@code HashMap<K, V>} 对象。
 	 * 
@@ -117,6 +105,84 @@ public abstract class MapUtils {
 	}
 
 	/**
+	 * 创建一个 {@code ConcurrentHashMap<K, V>} 对象。
+	 * 
+	 * @return 新建的 {@code ConcurrentHashMap<K, V>} 对象。
+	 */
+	public static <K, V> ConcurrentHashMap<K, V> newConcurrentHashMap() {
+		return new ConcurrentHashMap<K, V>();
+	}
+
+	/**
+	 * 创建一个初始容量为 {@code initialCapacity} 的 {@code ConcurrentHashMap<K, V>} 对象。
+	 * 
+	 * @return 新建的 {@code ConcurrentHashMap<K, V>} 对象。
+	 */
+	public static <K, V> ConcurrentHashMap<K, V> newConcurrentHashMap(int initialCapacity) {
+		return new ConcurrentHashMap<K, V>(initialCapacity);
+	}
+
+	/**
+	 * 创建一个含有一个键为 {@code key}、值为 {@code value} 元素的 {@code ConcurrentHashMap<K, V>}
+	 * 对象 。
+	 * 
+	 * @param key
+	 *            键
+	 * @param value
+	 *            值
+	 * @return 新建的 {@code ConcurrentHashMap<K, V>} 对象。
+	 */
+	public static <K, V> ConcurrentHashMap<K, V> newConcurrentHashMap(K key, V value) {
+		ConcurrentHashMap<K, V> map = new ConcurrentHashMap<K, V>();
+		map.put(key, value);
+		return map;
+	}
+
+	/**
+	 * 创建一个初始容量为 {@code initialCapacity}，且含有一个键为 {@code key}、值为 {@code value} 元素的
+	 * {@code ConcurrentHashMap<K, V>} 对象。
+	 * 
+	 * @param initialCapacity
+	 *            初始容量
+	 * @param key
+	 *            键
+	 * @param value
+	 *            值
+	 * @return 新建的 {@code HashMap<K, V>} 对象。
+	 */
+	public static <K, V> ConcurrentHashMap<K, V> newConcurrentHashMap(int initialCapacity, K key, V value) {
+		ConcurrentHashMap<K, V> map = new ConcurrentHashMap<K, V>(initialCapacity);
+		map.put(key, value);
+		return map;
+	}
+
+	/**
+	 * 将一个 {@code Map<K, V>} 对象转换为一个 {@code HashMap<K, V>} 对象。
+	 * 
+	 * @param map
+	 *            {@code Map<K, V>} 对象
+	 * @return 新建的 {@code HashMap<K, V>} 对象。
+	 */
+	public static <K, V> HashMap<K, V> toHashMap(Map<K, V> map) {
+		HashMap<K, V> copy = new HashMap<K, V>(map.size());
+		copy.putAll(map);
+		return copy;
+	}
+
+	/**
+	 * 将一个 {@code Map<K, V>} 对象转换为一个 {@code ConcurrentHashMap<K, V>} 对象。
+	 * 
+	 * @param map
+	 *            {@code Map<K, V>} 对象
+	 * @return 新建的 {@code ConcurrentHashMap<K, V>} 对象。
+	 */
+	public static <K, V> ConcurrentHashMap<K, V> toConcurrentHashMap(Map<K, V> map) {
+		ConcurrentHashMap<K, V> copy = new ConcurrentHashMap<K, V>(map.size());
+		copy.putAll(map);
+		return copy;
+	}
+
+	/**
 	 * 创建一个含有 {@code map} 所有元素的 {@code MapBuilder<M, K, V>} 对象。
 	 * 
 	 * @param map
@@ -125,20 +191,6 @@ public abstract class MapUtils {
 	 */
 	public static <M extends Map<K, V>, K, V> MapBuilder<M, K, V> newMapBuilder(M map) {
 		return new MapBuilder<M, K, V>(map);
-	}
-
-	/**
-	 * 创建一个 {@code MapBuilder<HashMap<K, V>, K, V>} 含有 {@code map} 所有元素的
-	 * {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
-	 * 
-	 * @param map
-	 *            查找表对象
-	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
-	 */
-	public static <K, V> MapBuilder<HashMap<K, V>, K, V> toHashMapBuilder(Map<K, V> map) {
-		HashMap<K, V> copy = new HashMap<K, V>(map.size());
-		copy.putAll(map);
-		return new MapBuilder<HashMap<K, V>, K, V>(copy);
 	}
 
 	/**
@@ -177,7 +229,7 @@ public abstract class MapUtils {
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
 	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder() {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>());
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap());
 	}
 
 	/**
@@ -187,7 +239,7 @@ public abstract class MapUtils {
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
 	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(int initialCapacity) {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>(initialCapacity));
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap(initialCapacity));
 	}
 
 	/**
@@ -198,21 +250,21 @@ public abstract class MapUtils {
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
 	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType) {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>());
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap());
 	}
 
 	/**
 	 * 创建一个键类型为 {@code keyType}，初始容量为 {@code initialCapacity} 的
 	 * {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 * 
-	 * @param keyType
-	 *            键类型
 	 * @param initialCapacity
 	 *            初始容量
+	 * @param keyType
+	 *            键类型
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
-	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType, int initialCapacity) {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>(initialCapacity));
+	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(int initialCapacity, Class<K> keyType) {
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap(initialCapacity));
 	}
 
 	/**
@@ -226,22 +278,161 @@ public abstract class MapUtils {
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
 	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType, Class<V> valueType) {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>());
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap());
 	}
 
 	/**
 	 * 创建一个键类型为 {@code keyType}、值类型为 {@code valueType}，初始容量为 {@code initialCapacity}
 	 * 的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 * 
-	 * @param keyType
-	 *            键类型
 	 * @param initialCapacity
 	 *            初始容量
+	 * @param keyType
+	 *            键类型
+	 * @param valueType
+	 *            值类型
 	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
 	 */
-	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(Class<K> keyType, Class<V> valueType,
-			int initialCapacity) {
-		return new MapBuilder<HashMap<K, V>, K, V>(new HashMap<K, V>(initialCapacity));
+	public static <K, V> MapBuilder<HashMap<K, V>, K, V> newHashMapBuilder(int initialCapacity, Class<K> keyType,
+			Class<V> valueType) {
+		return new MapBuilder<HashMap<K, V>, K, V>(newHashMap(initialCapacity));
+	}
+
+	/**
+	 * 创建一个含有一个键为 {@code key}、值为 {@code value} 元素的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param key
+	 *            键
+	 * @param value
+	 *            值
+	 * @return 新建的哈希查找表构建器，即 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(K key, V value) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap(key, value));
+	}
+
+	/**
+	 * 创建一个含有一个键为 {@code key}、值为 {@code value} 元素，且初始容量为 {@code initialCapacity} 的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param initialCapacity
+	 *            初始容量
+	 * @param key
+	 *            键
+	 * @param value
+	 *            值
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(int initialCapacity,
+			K key, V value) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap(initialCapacity, key, value));
+	}
+
+	/**
+	 * 创建一个 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder() {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap());
+	}
+
+	/**
+	 * 创建一个初始容量为 {@code initialCapacity} 的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(int initialCapacity) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap(initialCapacity));
+	}
+
+	/**
+	 * 创建一个键类型为 {@code keyType} 的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>}
+	 * 对象。
+	 * 
+	 * @param keyType
+	 *            键类型
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(Class<K> keyType) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap());
+	}
+
+	/**
+	 * 创建一个键类型为 {@code keyType}，初始容量为 {@code initialCapacity} 的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param initialCapacity
+	 *            初始容量
+	 * @param keyType
+	 *            键类型
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(int initialCapacity,
+			Class<K> keyType) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap(initialCapacity));
+	}
+
+	/**
+	 * 创建一个键类型为 {@code keyType}、值类型为 {@code valueType} 的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param keyType
+	 *            键类型
+	 * @param valueType
+	 *            值类型
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(Class<K> keyType,
+			Class<V> valueType) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap());
+	}
+
+	/**
+	 * 创建一个键类型为 {@code keyType}、值类型为 {@code valueType}，初始容量为 {@code initialCapacity}
+	 * 的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param initialCapacity
+	 *            初始容量
+	 * @param keyType
+	 *            键类型
+	 * @param valueType
+	 *            值类型
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> newConcurrentHashMapBuilder(int initialCapacity,
+			Class<K> keyType, Class<V> valueType) {
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(newConcurrentHashMap(initialCapacity));
+	}
+
+	/**
+	 * 创建一个 {@code MapBuilder<HashMap<K, V>, K, V>} 含有 {@code map} 所有元素的
+	 * {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param map
+	 *            查找表对象
+	 * @return 新建的 {@code MapBuilder<HashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<HashMap<K, V>, K, V> toHashMapBuilder(Map<K, V> map) {
+		HashMap<K, V> copy = new HashMap<K, V>(map.size());
+		copy.putAll(map);
+		return new MapBuilder<HashMap<K, V>, K, V>(copy);
+	}
+
+	/**
+	 * 创建一个 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 含有 {@code map} 所有元素的
+	 * {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 * 
+	 * @param map
+	 *            查找表对象
+	 * @return 新建的 {@code MapBuilder<ConcurrentHashMap<K, V>, K, V>} 对象。
+	 */
+	public static <K, V> MapBuilder<ConcurrentHashMap<K, V>, K, V> toConcurrentHashMapBuilder(Map<K, V> map) {
+		ConcurrentHashMap<K, V> copy = new ConcurrentHashMap<K, V>(map.size());
+		copy.putAll(map);
+		return new MapBuilder<ConcurrentHashMap<K, V>, K, V>(copy);
 	}
 
 	/**
@@ -272,7 +463,7 @@ public abstract class MapUtils {
 		 *            查找表
 		 * @return 查找表构建器
 		 */
-		public MapBuilder<M, K, V> putAll(M map) {
+		public MapBuilder<M, K, V> putAll(Map<K, V> map) {
 			if (map != null) {
 				this.map.putAll(map);
 			}

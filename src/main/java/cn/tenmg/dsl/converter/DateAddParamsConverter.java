@@ -16,7 +16,7 @@ import cn.tenmg.dsl.utils.MapUtils;
  */
 public class DateAddParamsConverter extends AbstractParamsConverter<Object> {
 
-	private static final Map<String, Integer> fields = MapUtils.newHashMapBuilder(String.class, Integer.class, 7)
+	private static final Map<String, Integer> fields = MapUtils.newHashMapBuilder(7, String.class, Integer.class)
 			.put(Unit.MILLISECOND, Calendar.MILLISECOND).put(Unit.SECOND, Calendar.SECOND)
 			.put(Unit.MINUTE, Calendar.MINUTE).put(Unit.HOUR, Calendar.HOUR).put(Unit.DAY, Calendar.DATE)
 			.put(Unit.MONTH, Calendar.MONTH).build(Unit.YEAR, Calendar.YEAR);
