@@ -13,7 +13,7 @@ WHERE enabled = :enabled
   #[AND STAFF_NAME LIKE :staffName]
   #[AND STAFF_ID = :staff.staffId]
   #[AND STAFF_ID = :map.staffId]
-  #[AND STAFF_NAME = :map[staffName]-- 单行注释]
+  #[if(:map['staffName']!=null&&:staffName!=null) AND STAFF_NAME = :map[staffName]-- 单行注释]
   #[AND STAFF_ID = :array[0]]
   #[:null]
   #[:emptyString]

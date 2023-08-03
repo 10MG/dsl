@@ -1,5 +1,7 @@
 package cn.tenmg.dsl;
 
+import java.util.Map;
+
 /**
  * 代码执行引擎
  * 
@@ -10,14 +12,17 @@ package cn.tenmg.dsl;
 public interface EvalEngine {
 
 	/**
+	 * 代码执行前调用
+	 */
+	void open();
+
+	/**
 	 * 向代码执行对象存入参数
 	 * 
-	 * @param key
-	 *            参数键
-	 * @param value
-	 *            参数值
+	 * @param params
+	 *            参数
 	 */
-	void put(String key, Object value) throws Exception;
+	void put(Map<String, Object> params) throws Exception;
 
 	/**
 	 * 执行代码
@@ -29,5 +34,10 @@ public interface EvalEngine {
 	 *             发生异常
 	 */
 	Object eval(String code) throws Exception;
+
+	/**
+	 * 代码执行后调用
+	 */
+	void close();
 
 }

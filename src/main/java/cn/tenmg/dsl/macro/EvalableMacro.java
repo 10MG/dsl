@@ -1,8 +1,6 @@
 package cn.tenmg.dsl.macro;
 
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import cn.tenmg.dsl.DSLContext;
 import cn.tenmg.dsl.EvalEngine;
@@ -20,36 +18,37 @@ import cn.tenmg.dsl.utils.StringUtils;
  * 
  * @since 1.4.0
  */
-@SuppressWarnings("unchecked")
 public abstract class EvalableMacro implements Macro {
 
-	private static Class<? extends EvalEngine> evalEngineClass;
+	private static final EvalEngine evalEngine = getEvalEngine();
 
-	static {
+	private static EvalEngine getEvalEngine() {
 		String className = ConfigUtils.getProperty("macro.eval-engine");
+		EvalEngine evalEngine;
 		if (StringUtils.isBlank(className)) {
-			evalEngineClass = JavaScriptEngine.class;
+			evalEngine = new JavaScriptEngine();
 		} else {
 			try {
-				evalEngineClass = (Class<EvalEngine>) Class.forName(className);
+				evalEngine = (EvalEngine) Class.forName(className).getConstructor().newInstance();
 			} catch (Exception e) {
-				evalEngineClass = JavaScriptEngine.class;
+				evalEngine = new JavaScriptEngine();
 			}
 		}
+		return evalEngine;
 	}
 
 	@Override
 	public boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
 			Map<String, Object> params) throws Exception {
-		EvalEngine evalEngine = evalEngineClass.getConstructor().newInstance();
-		if (MapUtils.isNotEmpty(params)) {
-			Entry<String, Object> entry;
-			for (Iterator<Entry<String, Object>> it = params.entrySet().iterator(); it.hasNext();) {
-				entry = it.next();
-				evalEngine.put(entry.getKey(), entry.getValue());
+		try {
+			evalEngine.open();
+			if (MapUtils.isNotEmpty(params)) {
+				evalEngine.put(params);
 			}
+			return this.excute(evalEngine, context, attributes, logic, dslf);
+		} finally {
+			evalEngine.close();
 		}
-		return this.excute(evalEngine, context, attributes, logic, dslf);
 	}
 
 	/**

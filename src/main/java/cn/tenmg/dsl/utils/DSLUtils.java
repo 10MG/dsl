@@ -34,8 +34,8 @@ public abstract class DSLUtils {
 
 	private static DefaultDSLContext defaultDSLContext = new DefaultDSLContext();
 
-	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', LINE_BREAK),
-			PARAM_CHARS = SetUtils.newHashSet('.', LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, '_');
+	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', LINE_BREAK), PARAM_CHARS = SetUtils
+			.newHashSet('.', LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, '_', SINGLE_QUOTATION_MARK, '"');
 
 	static {
 		DYNAMIC_PREFIX = ConfigUtils.getProperty("dynamic.prefix", "#[").toCharArray();
@@ -221,8 +221,7 @@ public abstract class DSLUtils {
 				} else {
 					scriptBuilder.append(c);
 				}
-			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
-				isString = true;
+			} else if (c == SINGLE_QUOTATION_MARK && notParamAccessor) {// 字符串区域开始
 				if (deep > 0) {
 					dslfBuilders.get(deep).append(c);
 				} else {

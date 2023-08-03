@@ -60,14 +60,15 @@ public abstract class ObjectUtils {
 	public static <T> T getValue(Object object, String attribute) throws Exception {
 		Object value = getValueInner(object, attribute);
 		if (value == null) {
-			if (attribute.contains(".")) {// 访问Bean或者Map属性
-				String[] names = attribute.split("\\.");
+			String[] names = attribute.split("\\.", 2);
+			if (names.length > 1) {// 访问Bean或者Map属性
 				attribute = names[0];
 				value = getValueInner(object, attribute);
 				if (value == null) {// 如果类似“key.name[*]……”形式的，可能是访问数组的某一项值或者是访问Map对象的属性值。如果是，则获取数组的某一项值或者Map对象的某个属性值
 					return getMaybeArrayOrMapValue(object, attribute);
 				} else {
-					for (int i = 1; i < names.length; i++) {
+					names = names[1].split("\\.");
+					for (int i = 0; i < names.length; i++) {
 						attribute = names[i];
 						value = getValue(value, attribute);// 获取对象属性
 						if (value == null) {// 可能是数组
@@ -77,7 +78,7 @@ public abstract class ObjectUtils {
 								if (value == null) {// 数组对象为null，返回null
 									return null;
 								} else {// 否则，获取数组的值
-									value = getArrayOrMapValue(value, /*object,*/ m);
+									value = getArrayOrMapValue(value, m);
 								}
 							}
 							return (T) value;
@@ -619,7 +620,12 @@ public abstract class ObjectUtils {
 	private static final Object getArrayOrMapValue(Object value, String group) throws Exception {
 		String key = group.substring(1, group.length() - 1);
 		if (value instanceof Map) {
-			return ((Map<?, ?>) value).get(key);
+			Map<?, ?> map = ((Map<?, ?>) value);
+			if (map.containsKey(key)) {
+				return map.get(key);
+			} else {
+				return map.get(StringUtils.decode(key));
+			}
 		} else if (value instanceof List) {
 			return ((List<?>) value).get(Integer.valueOf(key));
 		} else if (value instanceof Object[]) {

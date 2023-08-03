@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
  */
 public abstract class StringUtils {
 
-	private final static String EMPTY = "";
+	private final static String EMPTY = "", SINGLE_QUOTATION_MARK = "'", DOUBLE_QUOTATION_MARKS = "\"",
+			SINGLE_QUOTATION_ENCODER = "\\\\'", DOUBLE_QUOTATION_ENCODER = "\\\\\"";
 
 	public final static int INDEX_NOT_FOUND = -1;
 
@@ -739,6 +740,51 @@ public abstract class StringUtils {
 	 */
 	public static String concat(CharSequence... args) {
 		return concatInner(args);
+	}
+
+	/**
+	 * 使用单引号编码字符串
+	 * 
+	 * @param s
+	 *            字符串
+	 * @return 编码后的字符串
+	 */
+	public static String encode(String s) {
+		return s == null ? null
+				: concat(SINGLE_QUOTATION_MARK, s.replaceAll(SINGLE_QUOTATION_MARK, SINGLE_QUOTATION_ENCODER),
+						SINGLE_QUOTATION_MARK);
+	}
+
+	/**
+	 * 使用双引号编码字符串
+	 * 
+	 * @param s
+	 *            字符串
+	 * @return 编码后的字符串
+	 */
+	public static String encode2(String s) {
+		return s == null ? null
+				: concat(DOUBLE_QUOTATION_MARKS, s.replaceAll(DOUBLE_QUOTATION_MARKS, DOUBLE_QUOTATION_ENCODER),
+						DOUBLE_QUOTATION_MARKS);
+	}
+
+	/**
+	 * 解码字符串
+	 * 
+	 * @param s
+	 *            字符串
+	 * @return 如果字符串已使用单引号或者双引号编码的字符串，则解码并返回，否则返回原字符串
+	 */
+	public static String decode(String s) {
+		if (isBlank(s)) {
+			return s;
+		}
+		if (s.startsWith(SINGLE_QUOTATION_MARK) && s.endsWith(SINGLE_QUOTATION_MARK)) {
+			return s.substring(1, s.length() - 1).replaceAll(SINGLE_QUOTATION_ENCODER, SINGLE_QUOTATION_MARK);
+		} else if (s.startsWith(DOUBLE_QUOTATION_MARKS) && s.endsWith(DOUBLE_QUOTATION_MARKS)) {
+			return s.substring(1, s.length() - 1).replaceAll(DOUBLE_QUOTATION_ENCODER, DOUBLE_QUOTATION_MARKS);
+		}
+		return s;
 	}
 
 	@SuppressWarnings("unchecked")
