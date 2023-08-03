@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import cn.tenmg.dsl.filter.GtParamsFilter;
 import cn.tenmg.dsl.filter.GteParamsFilter;
 import cn.tenmg.dsl.filter.LtParamsFilter;
 import cn.tenmg.dsl.filter.LteParamsFilter;
+import cn.tenmg.dsl.model.Staff;
 
 /**
  * 动态脚本语言(DSL)工具类测试类
@@ -37,7 +39,7 @@ import cn.tenmg.dsl.filter.LteParamsFilter;
  */
 public class DSLUtilsTest {
 
-	private static final String expectedSQL = "SELECT STAFF_ID, STAFF_NAME, POSITION, STATE, CREATE_TIME FROM STAFF_INFO WHERE enabled = :enabled AND STATE = :state AND CREATE_TIME >= :beginDate AND CREATE_TIME < :endDate AND POSITION in (:positions) AND STAFF_NAME LIKE :staffName AND 0 != :noteq AND 0 <= :notgt AND 0 < :notgte AND 0 >= :notlt AND 0 > :notlte ORDER BY STAFF_NAME";
+	private static final String expectedSQL = "SELECT STAFF_ID, STAFF_NAME, POSITION, STATE, CREATE_TIME FROM STAFF_INFO WHERE enabled = :enabled AND STATE = :state AND CREATE_TIME >= :beginDate AND CREATE_TIME < :endDate AND POSITION in (:positions) AND STAFF_NAME LIKE :staffName AND STAFF_ID = :staff.staffId AND STAFF_ID = :map.staffId AND STAFF_NAME = :map[staffName]-- 单行注释 AND STAFF_ID = :array[0] AND 0 != :noteq /*多行 注释*/ AND 0 <= :notgt AND 0 < :notgte AND 0 >= :notlt AND 0 > :notlte ORDER BY CASE STAFF_ID WHEN :map.excellent[0] THEN 0 WHEN :map[excellent][1] THEN 1 WHEN :map.excellent[2] THEN 2 ELSE 3 END, STAFF_NAME";
 
 	@Test
 	public void test() throws IOException {
@@ -51,7 +53,11 @@ public class DSLUtilsTest {
 				.put("staffName", staffName).put("null", nullValue).put("emptyString", emptyString)
 				.put("blankSpace", blankSpace).put("eq", eq).put("noteq", noteq).put("gt", gt).put("notgt", notgt)
 				.put("gte", gte).put("notgte", notgte).put("lt", lt).put("notlt", notlt).put("lte", lte)
-				.put("notlte", notlte).put("others", others).build();
+				.put("notlte", notlte).put("others", others).put("staff", new Staff(1))
+				.put("map",
+						MapUtils.newHashMapBuilder().put("staffId", 1).put("staffName", "June")
+								.put("excellent", Arrays.asList(1, 2, 3)).build())
+				.put("array", Arrays.asList(100)).build();
 
 		// 参数转换器
 		List<ParamsConverter<?>> converters = new ArrayList<ParamsConverter<?>>();

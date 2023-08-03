@@ -11,11 +11,17 @@ WHERE enabled = :enabled
   #[AND CREATE_TIME < :endDate]
   #[AND POSITION in (:positions)]
   #[AND STAFF_NAME LIKE :staffName]
+  #[AND STAFF_ID = :staff.staffId]
+  #[AND STAFF_ID = :map.staffId]
+  #[AND STAFF_NAME = :map[staffName]-- 单行注释]
+  #[AND STAFF_ID = :array[0]]
   #[:null]
   #[:emptyString]
   #[:blankSpace]
   #[:eq]
   #[AND 0 != :noteq]
+  /*多行
+        注释*/
   #[:gt]
   #[AND 0 <= :notgt]
   #[:gte]
@@ -24,4 +30,4 @@ WHERE enabled = :enabled
   #[AND 0 >= :notlt]
   #[:lte]
   #[AND 0 > :notlte]
-ORDER BY STAFF_NAME
+ORDER BY #[CASE STAFF_ID WHEN :map.excellent[0] THEN 0 #[WHEN :map[excellent][1] THEN 1] #[WHEN :map.excellent[2] THEN 2] ELSE 3 END,] STAFF_NAME

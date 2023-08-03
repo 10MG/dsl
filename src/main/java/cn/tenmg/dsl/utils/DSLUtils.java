@@ -30,9 +30,12 @@ public abstract class DSLUtils {
 			PARAM_MARK = '?', DYNAMIC_PREFIX[], DYNAMIC_SUFFIX, PARAM_PREFIX, EMBED_PREFIX, LINE_BREAK = '\n',
 			SINGLELINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_PREFIXES[][], MILTILINE_COMMENT_SUFFIXES[][];
 
+	private static final char LEFT_SQUARE_BRACKET = '[', RIGHT_SQUARE_BRACKET = ']';
+
 	private static DefaultDSLContext defaultDSLContext = new DefaultDSLContext();
 
-	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', '\n');
+	private static final Set<Character> LINE_TAIL = SetUtils.newHashSet('\r', LINE_BREAK),
+			PARAM_CHARS = SetUtils.newHashSet('.', LEFT_SQUARE_BRACKET, RIGHT_SQUARE_BRACKET, '_');
 
 	static {
 		DYNAMIC_PREFIX = ConfigUtils.getProperty("dynamic.prefix", "#[").toCharArray();
@@ -146,7 +149,8 @@ public abstract class DSLUtils {
 				isMiltilineComment = false, // 是否在多行注释区域
 				isDynamic = false, // 是否在动态脚本区域
 				isParam = false, // 是否在参数区域
-				isEmbed = false; // 是否在嵌入参数区域
+				isEmbed = false, // 是否在嵌入参数区域
+				notParamAccessor = true;// 不在参数访问符“[]”内
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
 		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
 		HashMap<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
@@ -170,7 +174,7 @@ public abstract class DSLUtils {
 					scriptBuilder.append(c);
 				}
 			} else if (isSinglelineComment) {// 单行注释内
-				if (isDynamic && isDynamicEnd(c)) {// 当前字符为动态脚本结束字符
+				if (isDynamic && isDynamicEnd(c) && notParamAccessor) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
 					if (inValidParams.get(deep) == null) {// 不含无效参数
 						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
@@ -194,6 +198,11 @@ public abstract class DSLUtils {
 						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
+					if (c == LEFT_SQUARE_BRACKET) {
+						notParamAccessor = false;
+					} else if (c == RIGHT_SQUARE_BRACKET) {
+						notParamAccessor = true;
+					}
 					if (c == LINE_BREAK) {
 						isSinglelineComment = false;
 					}
@@ -234,7 +243,7 @@ public abstract class DSLUtils {
 					scriptBuilder.append(c);
 				}
 			} else if (isDynamic) {// 当前字符处于动态脚本区域
-				if (isDynamicEnd(c)) {// 结束当前动态脚本区域
+				if (isDynamicEnd(c) && notParamAccessor) {// 结束当前动态脚本区域
 					if (isParam) {// 处于动态参数区域
 						isParam = false;// 结束动态参数区域
 						paramName = paramNameBuilder.toString();
@@ -278,6 +287,11 @@ public abstract class DSLUtils {
 						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
+					if (c == LEFT_SQUARE_BRACKET) {
+						notParamAccessor = false;
+					} else if (c == RIGHT_SQUARE_BRACKET) {
+						notParamAccessor = true;
+					}
 					if (isParam) {// 处于动态参数区域
 						if (isParamChar(c)) {
 							paramNameBuilder.append(c);
@@ -579,14 +593,15 @@ public abstract class DSLUtils {
 	}
 
 	/**
-	 * 根据指定的字符c，判断是否是参数字符（即大小写字母、数字、下划线、短横线）
+	 * 根据指定的字符c，判断是否是参数字符（即大小写字母、数字、英文句号、方括号、下划线）
 	 * 
 	 * @param c
 	 *            指定字符
-	 * @return 如果字符c为26个字母（大小写均可）、“0-9”、“.”、“[”、“]”或者“_”，返回true，否则返回false
+	 * @return 如果字符c为26个字母（大小写均可）、“0-9”、“.”、“[”、“]”或者“_”，返回 {@code true}，否则返回
+	 *         {@code false}
 	 */
 	public static boolean isParamChar(char c) {
-		return is26LettersIgnoreCase(c) || (c >= '0' && c <= '9') || c == '_';
+		return is26LettersIgnoreCase(c) || (c >= '0' && c <= '9') || PARAM_CHARS.contains(c);
 	}
 
 	/**
