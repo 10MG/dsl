@@ -77,7 +77,7 @@ public abstract class ObjectUtils {
 								if (value == null) {// 数组对象为null，返回null
 									return null;
 								} else {// 否则，获取数组的值
-									value = getArrayOrMapValue(value, object, m);
+									value = getArrayOrMapValue(value, /*object,*/ m);
 								}
 							}
 							return (T) value;
@@ -601,28 +601,23 @@ public abstract class ObjectUtils {
 			if (value == null) {
 				return null;
 			} else {// 继续获取下一维数组的值
-				value = getArrayOrMapValue(value, object, m);
+				value = getArrayOrMapValue(value, m);
 			}
 		}
 		return (T) value;
 	}
 
 	@SuppressWarnings("unchecked")
-	private static final <T> T getArrayOrMapValue(Object value, Object object, Matcher m) throws Exception {
-		value = getArrayOrMapValue(value, object, m.group());
+	private static final <T> T getArrayOrMapValue(Object value, Matcher m) throws Exception {
+		value = getArrayOrMapValue(value, m.group());
 		while (value != null && m.find()) {
-			value = getArrayOrMapValue(value, object, m.group());
+			value = getArrayOrMapValue(value, m.group());
 		}
 		return (T) value;
 	}
 
-	private static final Object getArrayOrMapValue(Object value, Object object, String group) throws Exception {
-		String attribute = group.substring(1, group.length() - 1);
-		Object v = getValueInner(object, attribute);
-		String key = attribute;
-		if (v != null) {
-			key = v.toString();
-		}
+	private static final Object getArrayOrMapValue(Object value, String group) throws Exception {
+		String key = group.substring(1, group.length() - 1);
 		if (value instanceof Map) {
 			return ((Map<?, ?>) value).get(key);
 		} else if (value instanceof List) {
