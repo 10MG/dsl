@@ -388,7 +388,8 @@ public class MyMacro implements cn.tenmg.dsl.Macro {
 	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
 			Map<String, Object> params) throws Exception
 		// TODO Your logic to process dslf to an actual running script
-		return false;// Returns false, indicating that the processed script is only part of the actual running script
+		return false;// Returns false, indicating that the currently processed script is only part of the actual running script
+			    // Or returns true, indicating that the currently processed script ascends as the actual running main script and ignores all previously processed scripts and stops processing subsequent scripts
 	}
 
 }
@@ -411,7 +412,8 @@ public class MyMacro implements cn.tenmg.dsl.Macro {
 	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
 			Map<String, Object> params) throws Exception
 		// TODO Your logic to process dslf to an actual running script
-		return false;// Returns false, indicating that the processed script is only part of the actual running script
+		return false;// Returns false, indicating that the currently processed script is only part of the actual running script
+			    // Or returns true, indicating that the currently processed script ascends as the actual running main script and ignores all previously processed scripts and stops processing subsequent scripts
 	}
 
 }
@@ -434,6 +436,44 @@ resources
 mypackage.MyMacro
 ```
 
+## 执行引擎
+
+执行引擎用于执行宏逻辑判断代码，默认提供基于 JavaScript 引擎和 BeanShell 的实现。如需扩展，需实现 `cn.tenmg.dsl.EvalEngine` 接口：
+
+```
+public interface EvalEngine {
+
+	/**
+	 * 代码执行前调用
+	 */
+	void open();
+
+	/**
+	 * 向代码执行对象存入参数
+	 * 
+	 * @param params
+	 *            参数
+	 */
+	void put(Map<String, Object> params) throws Exception;
+
+	/**
+	 * 执行代码
+	 * 
+	 * @param code
+	 *            代码
+	 * @return 执行代码的结果
+	 * @throws Exception
+	 *             发生异常
+	 */
+	Object eval(String code) throws Exception;
+
+	/**
+	 * 代码执行后调用
+	 */
+	void close();
+
+}
+```
 
 ## 使用注释
 
