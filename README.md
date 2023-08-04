@@ -438,7 +438,7 @@ mypackage.MyMacro
 
 ## 执行引擎
 
-执行引擎用于执行宏逻辑判断代码，默认提供基于 JavaScript 引擎和 BeanShell 的实现。如需扩展，需实现 `cn.tenmg.dsl.EvalEngine` 接口：
+执行引擎用于执行宏逻辑判断代码，内置基于 JavaScript 引擎和 BeanShell 的实现。如需扩展，需实现 `cn.tenmg.dsl.EvalEngine` 接口：
 
 ```
 public interface EvalEngine {
