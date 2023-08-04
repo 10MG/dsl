@@ -198,11 +198,6 @@ public abstract class DSLUtils {
 						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
-					if (c == LEFT_SQUARE_BRACKET) {
-						notParamAccessor = false;
-					} else if (c == RIGHT_SQUARE_BRACKET) {
-						notParamAccessor = true;
-					}
 					if (c == LINE_BREAK) {
 						isSinglelineComment = false;
 					}
@@ -286,12 +281,12 @@ public abstract class DSLUtils {
 						deleteRedundantBlank(dslfBuilders.get(deep));// 删除多余空白字符
 					}
 				} else {
-					if (c == LEFT_SQUARE_BRACKET) {
-						notParamAccessor = false;
-					} else if (c == RIGHT_SQUARE_BRACKET) {
-						notParamAccessor = true;
-					}
 					if (isParam) {// 处于动态参数区域
+						if (c == LEFT_SQUARE_BRACKET) {
+							notParamAccessor = false;
+						} else if (c == RIGHT_SQUARE_BRACKET) {
+							notParamAccessor = true;
+						}
 						if (isParamChar(c)) {
 							paramNameBuilder.append(c);
 							dslfBuilder = dslfBuilders.get(deep);
@@ -328,6 +323,11 @@ public abstract class DSLUtils {
 							}
 						}
 					} else if (isEmbed) {// 处于动态嵌入参数区域
+						if (c == LEFT_SQUARE_BRACKET) {
+							notParamAccessor = false;
+						} else if (c == RIGHT_SQUARE_BRACKET) {
+							notParamAccessor = true;
+						}
 						if (isParamChar(c)) {
 							paramNameBuilder.append(c);
 							dslfBuilder = dslfBuilders.get(deep);
@@ -568,6 +568,116 @@ public abstract class DSLUtils {
 	}
 
 	/**
+	 * 获取含命名参数的脚本中使用的参数集
+	 * 
+	 * @param paramGetter
+	 *            参数获取器
+	 * @param namedscript
+	 *            含命名参数的脚本
+	 * @param params
+	 *            参数集
+	 * @return 含命名参数的脚本中使用的参数集
+	 */
+	public static Map<String, Object> getUsedParams(ParamGetter paramGetter, CharSequence namedscript, Object params) {
+		Map<String, Object> usedParams = new HashMap<String, Object>();
+		String paramName;
+		int i = 0, len = namedscript.length(), last = len - 1, backslashes = 0;// 连续反斜杠数
+		char a = BLANK_SPACE, b = a, c;
+		boolean isString = false, // 是否在字符串区域
+				isSinglelineComment = false, // 是否在单行注释区域
+				isMiltilineComment = false, // 是否在多行注释区域
+				isParam = false, // 是否在参数区域
+				isEmbed = false, // 是否在嵌入参数区域
+				notParamAccessor = true; // 不在参数访问符“[]”内
+		StringBuilder paramNameBuilder = new StringBuilder();
+		while (i < len) {
+			c = namedscript.charAt(i);
+			if (isString) {// 字符串内
+				if (c == BACKSLASH) {
+					backslashes++;
+				} else {
+					if (isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
+						isString = false;
+					}
+					backslashes = 0;
+				}
+			} else if (isSinglelineComment) {// 单行注释内
+				if (c == LINE_BREAK) {
+					isSinglelineComment = false;
+				}
+			} else if (isMiltilineComment) {// 多行注释内
+				if (isMiltilineCommentEnd(b, c)) {
+					isMiltilineComment = false;
+				}
+			} else if (c == SINGLE_QUOTATION_MARK && notParamAccessor) {// 字符串区域开始
+				isString = true;
+			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
+				isSinglelineComment = true;
+			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
+				isMiltilineComment = true;
+			} else {
+				if (isParam) {// 处于参数区域
+					if (c == LEFT_SQUARE_BRACKET) {
+						notParamAccessor = false;
+					} else if (c == RIGHT_SQUARE_BRACKET) {
+						notParamAccessor = true;
+					}
+					if (isParamChar(c)) {
+						paramNameBuilder.append(c);
+						if (i == last) {
+							paramName = paramNameBuilder.toString();
+							usedParams.put(paramName, paramGetter.getValue(params, paramName));
+							break;
+						}
+					} else {// 离开参数区域
+						isParam = false;
+						paramName = paramNameBuilder.toString();
+						usedParams.put(paramName, paramGetter.getValue(params, paramName));
+						if (i < last) {
+							paramNameBuilder.setLength(0);
+						}
+					}
+				} else if (isEmbed) {// 处于嵌入参数区域
+					if (c == LEFT_SQUARE_BRACKET) {
+						notParamAccessor = false;
+					} else if (c == RIGHT_SQUARE_BRACKET) {
+						notParamAccessor = true;
+					}
+					if (isParamChar(c)) {
+						paramNameBuilder.append(c);
+						if (i == last) {// 最后一个参数字符
+							paramName = paramNameBuilder.toString();
+							usedParams.put(paramName, paramGetter.getValue(params, paramName));
+							break;
+						}
+					} else {// 离开嵌入参数区域
+						isEmbed = false;
+						paramName = paramNameBuilder.toString();
+						usedParams.put(paramName, paramGetter.getValue(params, paramName));
+						if (i < last) {
+							paramNameBuilder.setLength(0);
+						}
+					}
+				} else {// 未处于参数区域
+					if (isParamBegin(a, b, c)) {
+						isParam = true;
+						paramNameBuilder.setLength(0);
+						paramNameBuilder.append(c);
+					} else if (isEmbedBegin(a, b, c)) {
+						isEmbed = true;
+						paramNameBuilder.setLength(0);
+						paramNameBuilder.append(c);
+					}
+				}
+			}
+			a = b;
+			b = c;
+			i++;
+		}
+		return usedParams;
+	}
+
+	/**
 	 * 根据指定的三个前后相邻字符b和c，判断其是否为命名参数脚本参数的开始位置
 	 * 
 	 * @param a
@@ -633,111 +743,6 @@ public abstract class DSLUtils {
 		} else {
 			return false;
 		}
-	}
-
-	/**
-	 * 获取含命名参数的脚本中使用的参数集
-	 * 
-	 * @param paramGetter
-	 *            参数获取器
-	 * @param namedscript
-	 *            含命名参数的脚本
-	 * @param params
-	 *            参数集
-	 * @return 含命名参数的脚本中使用的参数集
-	 */
-	public static Map<String, Object> getUsedParams(ParamGetter paramGetter, CharSequence namedscript, Object params) {
-		Map<String, Object> usedParams = new HashMap<String, Object>();
-		String paramName;
-		int i = 0, len = namedscript.length(), backslashes = 0;// 连续反斜杠数
-		char a = BLANK_SPACE, b = a, c;
-		boolean isString = false, // 是否在字符串区域
-				isSinglelineComment = false, // 是否在单行注释区域
-				isMiltilineComment = false, // 是否在多行注释区域
-				isParam = false, // 是否在参数区域
-				isEmbed = false, // 是否在嵌入参数区域
-				notParamAccessor = true; // 不在参数访问符“[]”内
-		StringBuilder paramNameBuilder = new StringBuilder();
-		while (i < len) {
-			c = namedscript.charAt(i);
-			if (isString) {// 字符串内
-				if (c == BACKSLASH) {
-					backslashes++;
-				} else {
-					if (isStringEnd(a, b, c, backslashes)) {// 字符串区域结束
-						isString = false;
-					}
-					backslashes = 0;
-				}
-			} else if (isSinglelineComment) {// 单行注释内
-				if (c == LINE_BREAK) {
-					isSinglelineComment = false;
-				}
-			} else if (isMiltilineComment) {// 多行注释内
-				if (isMiltilineCommentEnd(b, c)) {
-					isMiltilineComment = false;
-				}
-			} else if (c == SINGLE_QUOTATION_MARK && notParamAccessor) {// 字符串区域开始
-				isString = true;
-			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
-				isSinglelineComment = true;
-			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
-				isMiltilineComment = true;
-			} else {
-				if (c == LEFT_SQUARE_BRACKET) {
-					notParamAccessor = false;
-				} else if (c == RIGHT_SQUARE_BRACKET) {
-					notParamAccessor = true;
-				}
-				if (isParam) {// 处于参数区域
-					if (isParamChar(c)) {
-						paramNameBuilder.append(c);
-						if (i == len - 1) {
-							paramName = paramNameBuilder.toString();
-							usedParams.put(paramName, paramGetter.getValue(params, paramName));
-							break;
-						}
-					} else {// 离开参数区域
-						isParam = false;
-						paramName = paramNameBuilder.toString();
-						usedParams.put(paramName, paramGetter.getValue(params, paramName));
-						if (i < len - 1) {
-							paramNameBuilder.setLength(0);
-						}
-					}
-				} else if (isEmbed) {// 处于嵌入参数区域
-					if (isParamChar(c)) {
-						paramNameBuilder.append(c);
-						if (i == len - 1) {// 最后一个参数字符
-							paramName = paramNameBuilder.toString();
-							usedParams.put(paramName, paramGetter.getValue(params, paramName));
-							break;
-						}
-					} else {// 离开嵌入参数区域
-						isEmbed = false;
-						paramName = paramNameBuilder.toString();
-						usedParams.put(paramName, paramGetter.getValue(params, paramName));
-						if (i < len - 1) {
-							paramNameBuilder.setLength(0);
-						}
-					}
-				} else {// 未处于参数区域
-					if (isParamBegin(a, b, c)) {
-						isParam = true;
-						paramNameBuilder.setLength(0);
-						paramNameBuilder.append(c);
-					} else if (isEmbedBegin(a, b, c)) {
-						isEmbed = true;
-						paramNameBuilder.setLength(0);
-						paramNameBuilder.append(c);
-					}
-				}
-			}
-			a = b;
-			b = c;
-			i++;
-		}
-		return usedParams;
 	}
 
 	/**
