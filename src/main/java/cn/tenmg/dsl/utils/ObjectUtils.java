@@ -225,7 +225,7 @@ public abstract class ObjectUtils {
 	 * 
 	 * @param obj
 	 *            对象
-	 * @return
+	 * @return 克隆产生的新对象
 	 * @throws IOException
 	 *             I/O异常
 	 */
