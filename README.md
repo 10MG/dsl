@@ -34,7 +34,7 @@ DSL的全称是动态脚本语言（Dynamic Script Language），它是对脚本
 
 ### 参数访问符
 
-参数访问符包括两种，即`.`和`[]`, 使用`Map`传参时，优先获取键相等的值，只有键不存在时才会将键降级拆分一一访问对象，直到找到参数并返回，或未找到返回`null`。其中`.`用来访问对象的属性，例如`:staff.name`、`#staff.age`；`[]`用来访问数组、集合的元素，例如`:array[0]`、`#map[key]`。理论上，支持任意级嵌套使用，例如`:list[0][1].name`、`#map[key][1].staff.name`。1.2.2版本开始支持参数访问符。
+参数访问符包括两种，即`.`和`[]`, 使用`Map`传参时，优先获取键相等的值，只有键不存在时才会将键降级拆分一一访问对象，直到找到参数并返回，或未找到返回`null`。其中`.`用来访问对象的属性，例如`:staff.name`、`#staff.age`；`[]`用来访问数组、集合的元素，例如`:array[0]`、`#map[key]`。理论上，支持任意级嵌套使用，例如`:list[0][1].name`、`#map[key][1].staff.name`。1.4.0版本开始支持参数访问符。
 
 ## 参数转换器
 
@@ -170,7 +170,7 @@ DSL的全称是动态脚本语言（Dynamic Script Language），它是对脚本
 
 ### JDBCParamsParser
 
-JDBC参数解析器。将脚本中的命名参数替换为 `?` ，并将参数以此放入 `ArrayList` 中。
+JDBC参数解析器。将脚本中的命名参数替换为 `?` ，并将参数值依次放入 `ArrayList` 中。
 
 
 ### PlaintextParamsParser
@@ -257,7 +257,7 @@ SELECT
 
 ## 使用宏
 
-宏是动态脚本语言（DSL）的重要组成部分，通过宏可以实现一些简单的逻辑处理。宏是基于Java内置的JavaScript引擎实现的，因此其语法是JavaScript语法，而不是Java。目前已实现的宏包括：
+宏是动态脚本语言（DSL）的重要组成部分，通过宏可以实现一些简单的逻辑处理。宏默认是基于JavaScript引擎实现的，因此其语法是JavaScript语法，而不是Java。在JDK8中有官方内置的JavaScript引擎，JDK9及以上需要手动引入相关支持包，如 nashorn-core。目前已实现的宏包括：
 
 ```
 #[if(……)]
@@ -313,6 +313,15 @@ WHERE #[if(:curDepartmentId == '01') 1=1]
   #[AND S.STAFF_ID = :staffId]
   #[AND S.STAFF_NAME LIKE :staffName]
 ```
+
+从1.4.0开始，提供了基于 BeanShell 的实现。可以通过以下配置启用：
+
+```
+# 指定代码执行引擎，用于执行宏中的判断逻辑代码
+macro.eval-engine=cn.tenmg.dsl.eval.BeanshellEngine
+```
+
+不过，需要注意的是，基于 BeanShell 的代码执行引擎执行的是 Java 代码，不支持通过参数访问符 `.` 和 `[]` 访问 `Map` 对象内的参数，因此判断逻辑内的参数只允许使用简单参数名，而不支持参数访问符。
 
 ## 扩展宏
 
