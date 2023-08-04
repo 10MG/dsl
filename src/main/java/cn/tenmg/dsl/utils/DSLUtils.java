@@ -150,7 +150,7 @@ public abstract class DSLUtils {
 				isDynamic = false, // 是否在动态脚本区域
 				isParam = false, // 是否在参数区域
 				isEmbed = false, // 是否在嵌入参数区域
-				notParamAccessor = true;// 不在参数访问符“[]”内
+				notParamAccessor = true; // 不在参数访问符“[]”内
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
 		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
 		HashMap<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
@@ -491,7 +491,8 @@ public abstract class DSLUtils {
 		boolean isString = false, // 是否在字符串区域
 				isSinglelineComment = false, // 是否在单行注释区域
 				isMiltilineComment = false, // 是否在多行注释区域
-				isParam = false;// 是否在参数区域
+				isParam = false, // 是否在参数区域
+				notParamAccessor = true; // 不在参数访问符“[]”内
 
 		StringBuilder scriptBuilder = new StringBuilder(), commentBuilder = new StringBuilder(),
 				paramName = new StringBuilder();
@@ -521,7 +522,7 @@ public abstract class DSLUtils {
 					scriptBuilder.append(commentBuilder);
 					commentBuilder.setLength(0);
 				}
-			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
+			} else if (c == SINGLE_QUOTATION_MARK && notParamAccessor) {// 字符串区域开始
 				isString = true;
 				scriptBuilder.append(c);
 			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
@@ -531,6 +532,11 @@ public abstract class DSLUtils {
 				isMiltilineComment = true;
 				commentBuilder.append(c);
 			} else if (isParam) {// 处于参数区域
+				if (c == LEFT_SQUARE_BRACKET) {
+					notParamAccessor = false;
+				} else if (c == RIGHT_SQUARE_BRACKET) {
+					notParamAccessor = true;
+				}
 				if (isParamChar(c)) {
 					paramName.append(c);
 				} else {
@@ -649,7 +655,8 @@ public abstract class DSLUtils {
 				isSinglelineComment = false, // 是否在单行注释区域
 				isMiltilineComment = false, // 是否在多行注释区域
 				isParam = false, // 是否在参数区域
-				isEmbed = false; // 是否在嵌入参数区域
+				isEmbed = false, // 是否在嵌入参数区域
+				notParamAccessor = true; // 不在参数访问符“[]”内
 		StringBuilder paramNameBuilder = new StringBuilder();
 		while (i < len) {
 			c = namedscript.charAt(i);
@@ -670,13 +677,18 @@ public abstract class DSLUtils {
 				if (isMiltilineCommentEnd(b, c)) {
 					isMiltilineComment = false;
 				}
-			} else if (c == SINGLE_QUOTATION_MARK) {// 字符串区域开始
+			} else if (c == SINGLE_QUOTATION_MARK && notParamAccessor) {// 字符串区域开始
 				isString = true;
 			} else if (isSinglelineCommentBegin(b, c)) {// 单行注释开始
 				isSinglelineComment = true;
 			} else if (isMiltilineCommentBegin(b, c)) {// 多行注释开始
 				isMiltilineComment = true;
 			} else {
+				if (c == LEFT_SQUARE_BRACKET) {
+					notParamAccessor = false;
+				} else if (c == RIGHT_SQUARE_BRACKET) {
+					notParamAccessor = true;
+				}
 				if (isParam) {// 处于参数区域
 					if (isParamChar(c)) {
 						paramNameBuilder.append(c);
@@ -1093,7 +1105,7 @@ public abstract class DSLUtils {
 	 * 
 	 * @since 1.3.0
 	 */
-	private static class SimpleParamGetter implements ParamGetter {
+	public static class SimpleParamGetter implements ParamGetter {
 
 		private static final SimpleParamGetter INSTANCE = new SimpleParamGetter();
 
@@ -1101,7 +1113,7 @@ public abstract class DSLUtils {
 			super();
 		}
 
-		protected static SimpleParamGetter getInstance() {
+		public static SimpleParamGetter getInstance() {
 			return INSTANCE;
 		}
 
@@ -1120,15 +1132,19 @@ public abstract class DSLUtils {
 	 * @since 1.3.0
 	 *
 	 */
-	private static class ConvertAbleParamGetter implements ParamGetter {
+	public static class ConvertAbleParamGetter implements ParamGetter {
 
 		private final Map<String, Object> convertedParams = new HashMap<String, Object>();
 
-		private final List<ParamsConverter<?>> paramsConverters;
+		private final List<ParamsConverter<?>> converters;
 
-		private ConvertAbleParamGetter(List<ParamsConverter<?>> paramsConverters) {
+		private ConvertAbleParamGetter(List<ParamsConverter<?>> converters) {
 			super();
-			this.paramsConverters = paramsConverters;
+			this.converters = converters;
+		}
+
+		public static ConvertAbleParamGetter newInstance(List<ParamsConverter<?>> converters) {
+			return new ConvertAbleParamGetter(converters);
 		}
 
 		@Override
@@ -1136,7 +1152,7 @@ public abstract class DSLUtils {
 			if (convertedParams.containsKey(paramName)) {
 				return convertedParams.get(paramName);
 			}
-			return convert(paramsConverters, convertedParams, paramName,
+			return convert(converters, convertedParams, paramName,
 					ObjectUtils.getValueIgnoreException(params, paramName));
 		}
 
@@ -1150,21 +1166,25 @@ public abstract class DSLUtils {
 	 * @since 1.3.0
 	 *
 	 */
-	private static class FilterAbleParamGetter implements ParamGetter {
+	public static class FilterAbleParamGetter implements ParamGetter {
 
 		private final Set<String> filteredParams = new HashSet<String>();
 
-		private final List<ParamsFilter> paramsFilters;
+		private final List<ParamsFilter> filters;
 
-		private FilterAbleParamGetter(List<ParamsFilter> paramsFilters) {
+		private FilterAbleParamGetter(List<ParamsFilter> filters) {
 			super();
-			this.paramsFilters = paramsFilters;
+			this.filters = filters;
+		}
+
+		public static FilterAbleParamGetter newInstance(List<ParamsFilter> filters) {
+			return new FilterAbleParamGetter(filters);
 		}
 
 		@Override
 		public Object getValue(Object params, String paramName) {
 			Object value = ObjectUtils.getValueIgnoreException(params, paramName);
-			if (filteredParams.contains(paramName) || filtered(paramsFilters, filteredParams, paramName, value)) {
+			if (filteredParams.contains(paramName) || filtered(filters, filteredParams, paramName, value)) {
 				return null;
 			}
 			return value;
@@ -1180,20 +1200,25 @@ public abstract class DSLUtils {
 	 * @since 1.3.0
 	 *
 	 */
-	private static class FullFeaturesParamGetter implements ParamGetter {
+	public static class FullFeaturesParamGetter implements ParamGetter {
 
 		private final Map<String, Object> convertedParams = new HashMap<String, Object>();
 
 		private final Set<String> filteredParams = new HashSet<String>();
 
-		private final List<ParamsConverter<?>> paramsConverters;
+		private final List<ParamsConverter<?>> converters;
 
-		private final List<ParamsFilter> paramsFilters;
+		private final List<ParamsFilter> filters;
 
-		private FullFeaturesParamGetter(List<ParamsConverter<?>> paramsConverters, List<ParamsFilter> paramsFilters) {
+		private FullFeaturesParamGetter(List<ParamsConverter<?>> converters, List<ParamsFilter> filters) {
 			super();
-			this.paramsConverters = paramsConverters;
-			this.paramsFilters = paramsFilters;
+			this.converters = converters;
+			this.filters = filters;
+		}
+
+		public static FullFeaturesParamGetter newInstance(List<ParamsConverter<?>> converters,
+				List<ParamsFilter> filters) {
+			return new FullFeaturesParamGetter(converters, filters);
 		}
 
 		@Override
@@ -1204,9 +1229,9 @@ public abstract class DSLUtils {
 			if (filteredParams.contains(paramName)) {
 				return null;
 			}
-			Object value = convert(paramsConverters, convertedParams, paramName,
+			Object value = convert(converters, convertedParams, paramName,
 					ObjectUtils.getValueIgnoreException(params, paramName));
-			return filtered(paramsFilters, filteredParams, paramName, value) ? null : value;
+			return filtered(filters, filteredParams, paramName, value) ? null : value;
 		}
 
 	}
