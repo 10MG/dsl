@@ -2,8 +2,6 @@ package cn.tenmg.dsl.utils;
 
 import java.text.DecimalFormat;
 
-import cn.tenmg.dsl.exception.DateFormatException;
-import cn.tenmg.dsl.exception.DateParseException;
 import cn.tenmg.dsl.exception.NumberParseException;
 
 /**
@@ -52,13 +50,13 @@ public abstract class DecimalUtils {
 		try {
 			str = df.format(obj);
 		} catch (Exception e) {
-			throw new DateFormatException(StringUtils.concat("An exception occurred when using the pattern: ", pattern,
+			throw new NumberParseException(StringUtils.concat("An exception occurred when using the pattern: ", pattern,
 					" to format the Object: ", obj, " to String"), e);
 		}
 		try {
 			return df.parse(str);
 		} catch (Exception e) {
-			throw new DateParseException(StringUtils.concat("An exception occurred when using the pattern: ", pattern,
+			throw new NumberParseException(StringUtils.concat("An exception occurred when using the pattern: ", pattern,
 					" to parse the String: ", str, " to Number"), e);
 		}
 	}
