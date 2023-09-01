@@ -612,6 +612,10 @@ public class DslApp {
 3.  提交代码
 4.  新建 Pull Request
 
-## 友情链接
+## 下游产品
 
-DSQL开源地址：https://gitee.com/tenmg/dsql
+Clink：https://gitee.com/tenmg/Clink
+sparktool: https://gitee.com/tenmg/sparktool
+sql-paging：https://gitee.com/tenmg/sql-paging
+sqltool：https://gitee.com/tenmg/sqltool
+DSQL：https://gitee.com/tenmg/dsql
