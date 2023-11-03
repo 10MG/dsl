@@ -3,10 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<description>动态脚本语言（DSL，Dynamic Script Language）解析框架</description>
+	<description>动态脚本语言（DSL，Dynamic Script Language）解析框架。可广泛用于动态 SQL（即
+		DSQL）等场景的解析，DSQL 也是目前 DSL 最成功的应用领域，具体包括 Flink SQL（如 Clink）、Spark SQL（如
+		sparktool）和 JDBC（如 sqltool）。</description>
 	<groupId>cn.tenmg</groupId>
 	<artifactId>dsl</artifactId>
-	<version>1.4.1</version>
+	<version>1.4.2</version>
 	<packaging>jar</packaging>
 
 	<name>dsl</name>
@@ -35,7 +37,7 @@
 	<developers>
 		<developer>
 			<name>June</name>
-			<email>wjzhao@aliyun.com</email>
+			<email><![CDATA[wjzhao@aliyun.com]]></email>
 			<organization>10MG</organization>
 		</developer>
 	</developers>
@@ -77,14 +79,15 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>5.9.3</version>
+			<version>5.10.0</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
+		<!--
+		https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-launcher</artifactId>
-			<version>1.9.3</version>
+			<version>1.10.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
