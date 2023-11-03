@@ -14,6 +14,83 @@
 
 DSL 的全称是动态脚本语言（Dynamic Script Language），它是对脚本语言的一种扩展。DSL 使用`:`和参数名表示普通参数，使用`#`和参数名表示嵌入参数，并使用特殊字符`#[]`标记动态片段，当解析时，判断实际传入参数值是否为空（`null`）或不存在决定是否保留该动态片段，从而达到动态执行不同脚本目的。以此来避免程序员手动拼接繁杂的脚本，使得程序员能从繁杂的业务逻辑中解脱出来。此外，DSL 脚本支持宏，来增强脚本的动态逻辑处理能力。由于具有很强的动态处理能力，目前 DSL 最成功的应用领域是动态结构化查询语言（DSQL），包括 Flink SQL（如 [Clink](https://gitee.com/tenmg/clink)）、Spark SQL（如 [sparktool](https://gitee.com/tenmg/sparktool)）和 JDBC（如 [sqltool](https://gitee.com/tenmg/sqltool)）领域。
 
+
+## 动态片段
+
+DSL使用特殊字符`#[]`标记动态片段，并连同动态参数一起构成动态片段，动态片段可以是任意脚本片段。
+
+### 例子
+
+例如，可以对SQL脚本进行动态化解析。假设有一张员工信息表STAFF_INFO，表结构详见如下建表语句：
+
+```
+CREATE TABLE STAFF_INFO (
+  STAFF_ID VARCHAR(20) NOT NULL,          /*员工编号*/
+  STAFF_NAME VARCHAR(30) DEFAULT NULL,    /*员工姓名*/
+  DEPARTMENT_ID VARCHAR(10) DEFAULT NULL, /*部门编号*/
+  POSITION VARCHAR(30) DEFAULT NULL,      /*所任职位*/
+  STATUS VARCHAR(20) DEFAULT 'IN_SERVICE',/*在职状态*/
+  PRIMARY KEY (`STAFF_ID`)
+);
+```
+
+通常，我们经常需要按员工编号或者按员工姓名查询员工信息。这就需要我们对查询条件进行排列组合，一共会存在
+
+```math
+2^2=4
+```
+
+种可能的SQL。如果使用SQL拼接的技术实现，显然是比较低效的。如果查询条件数量更多，则拼接SQL会成为难以想象的难题。为此，我们必须有一种技术帮我们来完成这样的事情，动态片段应运而生。有了动态片段，我们对上述问题就能够轻松解决了。
+
+```
+SELECT
+  *
+FROM STAFF_INFO S
+WHERE 1=1
+  #[AND S.STAFF_ID = :staffId]
+  #[AND S.STAFF_NAME LIKE :staffName]
+```
+有了上述带动态片段的SQL，可以自动根据实际情况生成需要执行的SQL。例如：
+
+1. 参数staffId为空（`null`），而staffName为非空（非`null`）时，实际执行的语句为：
+
+```
+SELECT
+   *
+ FROM STAFF_INFO S
+ WHERE 1=1
+   AND S.STAFF_NAME LIKE :staffName
+```
+
+2. 相反，参数staffName为空（`null`），而staffId为非空（非`null`）时，实际执行的语句为：
+
+```
+SELECT
+   *
+ FROM STAFF_INFO S
+ WHERE 1=1
+   AND S.STAFF_ID = :staffId
+```
+
+3. 或者，参数staffId、staffName均为空（`null`）时，实际执行的语句为：
+
+```
+SELECT
+   *
+ FROM STAFF_INFO S
+ WHERE 1=1
+```
+
+4. 最后，参数staffId、staffName均为非空（非`null`）时，实际执行的语句为：
+
+```
+SELECT
+   *
+ FROM STAFF_INFO S
+ WHERE 1=1
+   AND S.STAFF_ID = :staffId
+   AND S.STAFF_NAME LIKE :staffName
+```
 ## 参数
 
 ### 普通参数
@@ -26,11 +103,11 @@ DSL 的全称是动态脚本语言（Dynamic Script Language），它是对脚�
 
 ### 动态参数
 
-动态参数是指，根据具体情况确定是否在动态脚本中生效的参数，动态参数是动态片段的组成部分。动态参数既可以是普通参数，也可以嵌入参数。
+动态参数是指，根据具体情况确定是否在动态脚本中生效的参数，动态参数是动态片段的组成部分。动态参数既可以是普通参数，也可以是嵌入参数。
 
 ### 静态参数
 
-静态参数是相对动态参数而言的，它永远会在动态脚本中生效。在动态片段之外使用的参数就是静态参数。静态参数既可以是普通参数，也可以嵌入参数。
+静态参数是相对动态参数而言的，它永远会在动态脚本中生效。在动态片段之外使用的参数就是静态参数。静态参数既可以是普通参数，也可以是嵌入参数。
 
 ### 参数访问符
 
@@ -177,83 +254,6 @@ JDBC参数解析器。将脚本中的命名参数替换为 `?` ，并将参数�
 
 明文参数解析器抽象类。将脚本中的命名参数替换为参数值，其中字符串参数将在替换的参数值上添加单引号。由于不同场景下，时间类型参数的转换差异很大，因此这部分还需用户自行实现。
 
-
-## 动态片段
-
-DSL使用特殊字符`#[]`标记动态片段，并连同动态参数一起构成动态片段，动态片段可以是任意脚本片段。
-
-### 例子
-
-例如，可以对SQL脚本进行动态化解析。假设有一张员工信息表STAFF_INFO，表结构详见如下建表语句：
-
-```
-CREATE TABLE STAFF_INFO (
-  STAFF_ID VARCHAR(20) NOT NULL,          /*员工编号*/
-  STAFF_NAME VARCHAR(30) DEFAULT NULL,    /*员工姓名*/
-  DEPARTMENT_ID VARCHAR(10) DEFAULT NULL, /*部门编号*/
-  POSITION VARCHAR(30) DEFAULT NULL,      /*所任职位*/
-  STATUS VARCHAR(20) DEFAULT 'IN_SERVICE',/*在职状态*/
-  PRIMARY KEY (`STAFF_ID`)
-);
-```
-
-通常，我们经常需要按员工编号或者按员工姓名查询员工信息。这就需要我们对查询条件进行排列组合，一共会存在
-
-```math
-2^2=4
-```
-
-种可能的SQL。如果使用SQL拼接的技术实现，显然是比较低效的。如果查询条件数量更多，则拼接SQL会成为难以想象的难题。为此，我们必须有一种技术帮我们来完成这样的事情，动态片段应运而生。有了动态片段，我们对上述问题就能够轻松解决了。
-
-```
-SELECT
-  *
-FROM STAFF_INFO S
-WHERE 1=1
-  #[AND S.STAFF_ID = :staffId]
-  #[AND S.STAFF_NAME LIKE :staffName]
-```
-有了上述带动态片段的SQL，可以自动根据实际情况生成需要执行的SQL。例如：
-
-1. 参数staffId为空（`null`），而staffName为非空（非`null`）时，实际执行的语句为：
-
-```
-SELECT
-   *
- FROM STAFF_INFO S
- WHERE 1=1
-   AND S.STAFF_NAME LIKE :staffName
-```
-
-2. 相反，参数staffName为空（`null`），而staffId为非空（非`null`）时，实际执行的语句为：
-
-```
-SELECT
-   *
- FROM STAFF_INFO S
- WHERE 1=1
-   AND S.STAFF_ID = :staffId
-```
-
-3. 或者，参数staffId、staffName均为空（`null`）时，实际执行的语句为：
-
-```
-SELECT
-   *
- FROM STAFF_INFO S
- WHERE 1=1
-```
-
-4. 最后，参数staffId、staffName均为非空（非`null`）时，实际执行的语句为：
-
-```
-SELECT
-   *
- FROM STAFF_INFO S
- WHERE 1=1
-   AND S.STAFF_ID = :staffId
-   AND S.STAFF_NAME LIKE :staffName
-```
 
 ## 使用宏
 
