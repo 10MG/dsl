@@ -579,7 +579,7 @@ public class DslApp {
 		// 接下来，可以使用 SQL 和参数执行 JDBC 了！
 		// …
 
-		// 或者，也可以直接转换为明文以供后续执行
+		// 或者，也可以直接转换为明文以供后续执行。
 		sql = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
 
 			@Override
@@ -604,7 +604,7 @@ public class DslApp {
 			}
 
 		}).getValue();
-		// 使用明文直接执行
+		// 使用明文直接执行。
 		// …
     }
 
