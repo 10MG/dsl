@@ -576,9 +576,10 @@ public class DslApp {
 				JDBCParamsParser.getInstance());
 		String sql = script.getValue();
 		List<Object> params = script.getParams();
-		// Use SQL and parameters to execute JDBC
+		// 接下来，可以使用 SQL 和参数执行 JDBC 了！
+		// …
 
-		// Plain script, such as plain SQL
+		// 或者，也可以直接转换为明文以供后续执行
 		sql = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
 
 			@Override
@@ -603,7 +604,8 @@ public class DslApp {
 			}
 
 		}).getValue();
-		// Use SQL to execute JDBC
+		// 使用明文直接执行
+		// …
     }
 
 }
