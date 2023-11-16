@@ -571,7 +571,7 @@ public class DslApp {
 		// 使用参数转换器和过滤器，可以对用户输入的内容进行类型转换、过滤等统一处理，如果需使用则需要传入 DSLContext 参数
 		// NamedScript namedScript = DSLUtils.parse(new DefaultDSLContext(converters, filters), dsl, params);
 
-                // NamedScript 对象配合参数解析器进一步转换，可得到实际可运行的脚本（例如内置的 JDBCParamsParser 可以将脚本中参数解析为 “?” 占位符并得到参数列表）。
+		// NamedScript 对象配合参数解析器进一步转换，可得到实际可运行的脚本。例如，内置的 JDBCParamsParser 可以将脚本中参数解析为 “?” 占位符并得到参数列表。
 		Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
 				JDBCParamsParser.getInstance());
 		String sql = script.getValue();
