@@ -567,7 +567,7 @@ public class DslApp {
 				+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
 				+ "  #[AND S.STAFF_ID = :staffId]\r\n"
 				+ "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
-		// 如果需要使用参数转换器和过滤器，则需要传入 DSLContext 参数
+		// 使用参数转换器和过滤器，可以对用户输入的内容进行类型转换、过滤等统一处理，如果需使用则需要传入 DSLContext 参数
 		// NamedScript namedScript = DSLUtils.parse(new DefaultDSLContext(converters, filters), dsl, params);
 
 		Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
