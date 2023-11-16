@@ -556,6 +556,7 @@ pom.xml添加依赖，${dsl.version}为版本号，可定义属性或直接使�
 public class DslApp {
 
     public static void main(String[] args) {
+		// 解析后得到的 NamedScript 对象，含有命名参数（形如“:paramName”）以及参数对照表。
 		NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_INFO S\r\n"
 				+ "WHERE #[if(:curDepartmentId == '01') 1=1 -- 添加恒等条件， 使得后面的动态条件可以统一，而不需要去除“AND”（注：这里是单行注释）]\r\n"
 				+ "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n"
@@ -570,6 +571,7 @@ public class DslApp {
 		// 使用参数转换器和过滤器，可以对用户输入的内容进行类型转换、过滤等统一处理，如果需使用则需要传入 DSLContext 参数
 		// NamedScript namedScript = DSLUtils.parse(new DefaultDSLContext(converters, filters), dsl, params);
 
+                // NamedScript 对象配合参数解析器进一步转换，可得到实际可运行的脚本（例如内置的 JDBCParamsParser 可以将脚本中参数解析为 “?” 占位符并得到参数列表）。
 		Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(),
 				JDBCParamsParser.getInstance());
 		String sql = script.getValue();
