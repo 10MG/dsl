@@ -142,11 +142,11 @@ public abstract class DSLUtils {
 				isEmbed = false, // 是否在嵌入参数区域
 				notParamAccessor = true; // 不在参数访问符“[]”内
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
-		HashSet<Integer> containsInValidParams = new HashSet<Integer>();
-		HashMap<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
+		Set<Integer> containsInValidParams = new HashSet<Integer>();
+		Map<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
 				embedParams = new HashMap<Integer, Map<String, Object>>();
-		HashMap<Integer, StringBuilder> dslfBuilders = new HashMap<Integer, StringBuilder>();
-		HashMap<Integer, Map<String, Object>> contexts = new HashMap<Integer, Map<String, Object>>();
+		Map<Integer, StringBuilder> dslfBuilders = new HashMap<Integer, StringBuilder>();
+		Map<Integer, Map<String, Object>> attributeses = new HashMap<Integer, Map<String, Object>>();
 		while (i < len) {
 			c = dsl.charAt(i);
 			if (isString) {// 字符串内
@@ -169,7 +169,7 @@ public abstract class DSLUtils {
 					if (containsInValidParams.contains(deep)) {// 含无效参数
 						if (deep > 0) {
 							if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-									containsInValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+									containsInValidParams, validParams, embedParams, attributeses, deep, true)) {// DSL片段解析为主脚本
 								deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 								break;
 							}
@@ -177,7 +177,7 @@ public abstract class DSLUtils {
 						}
 					} else {// 不含无效参数
 						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								containsInValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
+								containsInValidParams, validParams, embedParams, attributeses, deep, false)) {// DSL片段解析为主脚本
 							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 							break;
 						}
@@ -254,15 +254,15 @@ public abstract class DSLUtils {
 					if (containsInValidParams.contains(deep)) {// 含无效参数
 						if (deep > 0) {
 							if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-									containsInValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+									containsInValidParams, validParams, embedParams, attributeses, deep, true)) {// DSL片段解析为主脚本
 								deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 								break;
 							}
 							deep--;
 						}
-					} else {
+					} else {// 不含无效参数
 						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								containsInValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
+								containsInValidParams, validParams, embedParams, attributeses, deep, false)) {// DSL片段解析为主脚本
 							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 							break;
 						}
@@ -303,10 +303,8 @@ public abstract class DSLUtils {
 							if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
 								dslfBuilder = dslfBuilders.get(deep);
 								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
-								deep++;
-								dslfBuilders.put(deep, new StringBuilder());
-								validParams.put(deep, new HashMap<String, Object>());
-								embedParams.put(deep, new HashMap<String, Object>());
+								deep = prepareForNext(deep, dslfBuilders, containsInValidParams, validParams,
+										embedParams);
 							} else {
 								dslfBuilder = dslfBuilders.get(deep);
 								if (dslfBuilder == null) {
@@ -344,10 +342,8 @@ public abstract class DSLUtils {
 							if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
 								dslfBuilder = dslfBuilders.get(deep);
 								dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
-								deep++;
-								dslfBuilders.put(deep, new StringBuilder());
-								validParams.put(deep, new HashMap<String, Object>());
-								embedParams.put(deep, new HashMap<String, Object>());
+								deep = prepareForNext(deep, dslfBuilders, containsInValidParams, validParams,
+										embedParams);
 							} else {
 								dslfBuilder = dslfBuilders.get(deep);
 								if (dslfBuilder == null) {
@@ -361,10 +357,7 @@ public abstract class DSLUtils {
 						if (isDynamicBegin(b, c)) {// 嵌套的新的动态脚本区域
 							dslfBuilder = dslfBuilders.get(deep);
 							dslfBuilder.deleteCharAt(dslfBuilder.length() - 1);// 删除#号
-							deep++;
-							dslfBuilders.put(deep, new StringBuilder());
-							validParams.put(deep, new HashMap<String, Object>());
-							embedParams.put(deep, new HashMap<String, Object>());
+							deep = prepareForNext(deep, dslfBuilders, containsInValidParams, validParams, embedParams);
 						} else {
 							if (isParamBegin(a, b, c)) {
 								isParam = true;
@@ -389,10 +382,7 @@ public abstract class DSLUtils {
 				if (isDynamicBegin(b, c)) {
 					isDynamic = true;
 					scriptBuilder.deleteCharAt(scriptBuilder.length() - 1);
-					deep++;
-					dslfBuilders.put(deep, new StringBuilder());
-					validParams.put(deep, new HashMap<String, Object>());
-					embedParams.put(deep, new HashMap<String, Object>());
+					deep = prepareForNext(deep, dslfBuilders, containsInValidParams, validParams, embedParams);
 				} else {
 					if (isParam) {// 处于参数区域
 						if (isParamChar(c)) {
@@ -833,6 +823,32 @@ public abstract class DSLUtils {
 	}
 
 	/**
+	 * 开始下一层级处理的准备工作
+	 * 
+	 * @param currentDeep           当前层级
+	 * @param dslfBuilders          各级DSL片段构建器
+	 * @param containsInValidParams 否含有无效参数的DSL层级
+	 * @param validParamses         各级有效参数
+	 * @param embedParams           各级嵌入参数
+	 * @return 新的层级数
+	 */
+	private static int prepareForNext(int currentDeep, Map<Integer, StringBuilder> dslfBuilders,
+			Set<Integer> containsInValidParams, Map<Integer, Map<String, Object>> validParams,
+			Map<Integer, Map<String, Object>> embedParams) {
+		int newDeep = currentDeep + 1;
+		if (!containsInValidParams.contains(newDeep)) {
+			Map<String, Object> params = validParams.get(newDeep);
+			if (MapUtils.isNotEmpty(params)) {
+				validParams.get(currentDeep).putAll(params);// 将之前的当前层级有效参数添加到上一层级有效参数集中
+			}
+		}
+		dslfBuilders.put(newDeep, new StringBuilder());
+		validParams.put(newDeep, new HashMap<String, Object>());
+		embedParams.put(newDeep, new HashMap<String, Object>());
+		return newDeep;
+	}
+
+	/**
 	 * 删除前面的空白行
 	 * 
 	 * @param dsl 动态脚本语言
@@ -865,42 +881,53 @@ public abstract class DSLUtils {
 	 * @param paramGetter           参数获取器
 	 * @param usedParams            使用到的参数
 	 * @param containsInValidParams 否含有无效参数的DSL层级
-	 * @param validParamses         各级有效参数表
-	 * @param embedParams           嵌入参数表
-	 * @param attributesMap         各层级属性表。各层属性表由当本层已运行的宏所存储，供本层后续执行的宏使用
+	 * @param validParamses         各级有效参数
+	 * @param embedParams           各级嵌入参数
+	 * @param attributeses          各层级属性表。各层属性表由当本层已运行的宏所存储，供本层后续执行的宏使用
 	 * @param deep                  当前动态脚本级数
 	 * @param emptyWhenNoMacro      DSL片段没有宏时目标脚本是否为空白字符串
 	 */
 	private static final boolean processDSL(DSLContext context, StringBuilder scriptBuilder,
-			HashMap<Integer, StringBuilder> dslfBuilders, Object params, ParamGetter paramGetter,
+			Map<Integer, StringBuilder> dslfBuilders, Object params, ParamGetter paramGetter,
 			Map<String, Object> usedParams, Set<Integer> containsInValidParams,
-			HashMap<Integer, Map<String, Object>> validParamses, HashMap<Integer, Map<String, Object>> embedParams,
-			HashMap<Integer, Map<String, Object>> attributesMap, int deep, boolean emptyWhenNoMacro) {
+			Map<Integer, Map<String, Object>> validParamses, Map<Integer, Map<String, Object>> embedParams,
+			Map<Integer, Map<String, Object>> attributeses, int deep, boolean emptyWhenNoMacro) {
 		Map<String, Object> validParams = validParamses.get(deep);
-		if (containsInValidParams.contains(deep)) {
-			containsInValidParams.remove(deep);
-		} else {
-			usedParams.putAll(validParams);
-		}
-		Map<String, Object> attributes = attributesMap.get(deep);
+		Map<String, Object> attributes = attributeses.get(deep);
 		if (attributes == null) {
 			attributes = new HashMap<String, Object>();
-			attributesMap.put(deep, attributes);
+			attributeses.put(deep, attributes);
 		}
 		Dslf dslf = MacroUtils.execute(context, attributes, dslfBuilders.get(deep), validParams, emptyWhenNoMacro);
 		boolean dslfAsScript = dslf.isDslfAsScript();
-		if (dslfAsScript || deep == 1) {
-			replaceEmbedParams(params, scriptBuilder, dslf, usedParams, embedParams, deep);
+		if (containsInValidParams.contains(deep)) {
+			validParamses.remove(deep);
 		} else {
-			dslfBuilders.get(deep - 1).append(dslf.getValue());
+			Map<String, Object> prevValidParams = validParamses.get(deep + 1);
+			if (MapUtils.isNotEmpty(prevValidParams)) {
+				validParams.putAll(prevValidParams);
+			}
+		}
+		if (deep == 1) {
+			if (!containsInValidParams.contains(deep)) {
+				usedParams.putAll(validParams);
+			}
+			containsInValidParams.clear();
+			validParamses.clear();
+			replaceEmbedParams(params, scriptBuilder, dslf, embedParams, deep);
+		} else {
+			if (dslfAsScript) {
+				replaceEmbedParams(params, scriptBuilder, dslf, embedParams, deep);
+			} else {
+				dslfBuilders.get(deep - 1).append(dslf.getValue());
+			}
 		}
 		dslfBuilders.remove(deep);
-		validParamses.remove(deep);
 		return dslfAsScript;
 	}
 
 	private static void replaceEmbedParams(Object params, StringBuilder scriptBuilder, Dslf dslf,
-			Map<String, Object> usedParams, HashMap<Integer, Map<String, Object>> embedParams, int deep) {
+			Map<Integer, Map<String, Object>> embedParams, int deep) {
 		if (dslf.isDslfAsScript()) {
 			scriptBuilder.setLength(0);
 		}

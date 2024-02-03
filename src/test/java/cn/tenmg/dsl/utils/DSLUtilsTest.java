@@ -126,7 +126,7 @@ public class DSLUtilsTest {
 
 		DSLContext context = new DefaultDSLContext(converters, filters);
 		String dsl = readString("full-features.dsl");
-		// 三个参数的动态片段含所有参数
+		// 三个参数的动态片段的三个参数分别为 excellent0, excellent1, excellent2
 		NamedScript namedScript = DSLUtils.parse(context, dsl, params);
 		// 测试解析脚本正确性
 		Assertions.assertEquals(readString("expected1.dsl"), namedScript.getScript());
@@ -138,7 +138,7 @@ public class DSLUtilsTest {
 		Assertions.assertEquals(excellent1, usedParams.get("map[excellent][1]"));
 		Assertions.assertEquals(excellent2, usedParams.get("map.excellent[2]"));
 
-		// 三个参数的动态片段有2个参数
+		// 三个参数的动态片段的三个参数分别为 excellent0, excellent1, null
 		map.put("excellent", Arrays.asList(excellent0, excellent1));
 		namedScript = DSLUtils.parse(context, dsl, params);
 		// 测试解析脚本正确性
@@ -151,8 +151,21 @@ public class DSLUtilsTest {
 		Assertions.assertEquals(excellent1, usedParams.get("map[excellent][1]"));
 		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
 
-		// 三个参数的动态片段有1个参数
-		map.put("excellent", Arrays.asList(excellent0));
+		// 三个参数的动态片段的三个参数分别为 excellent0, excellent1, none
+		map.put("excellent", MapUtils.newHashMapBuilder("0", excellent0).build("1", excellent1));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected2.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertEquals(excellent0, usedParams.get("map.excellent[0]"));
+		Assertions.assertEquals(excellent1, usedParams.get("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 excellent0, null, excellent2
+		map.put("excellent", Arrays.asList(excellent0, null, excellent2));
 		namedScript = DSLUtils.parse(context, dsl, params);
 		// 测试解析脚本正确性
 		Assertions.assertEquals(readString("expected3.dsl"), namedScript.getScript());
@@ -161,6 +174,136 @@ public class DSLUtilsTest {
 		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
 				noteq, notgt, notgte, notlt, notlte, usedParams);
 		Assertions.assertEquals(excellent0, usedParams.get("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 excellent0, none, excellent2
+		map.put("excellent", MapUtils.newHashMapBuilder("0", excellent0).build("2", excellent2));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected3.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertEquals(excellent0, usedParams.get("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 null, excellent1, excellent2
+		map.put("excellent", Arrays.asList(null, excellent1, excellent2));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 none, excellent1, excellent2
+		map.put("excellent", MapUtils.newHashMapBuilder("1", excellent1).build("2", excellent2));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 excellent0, null, null
+		map.put("excellent", Arrays.asList(excellent0, null, null));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected5.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertEquals(excellent0, usedParams.get("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 excellent0, none, none
+		map.put("excellent", Arrays.asList(excellent0));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected5.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertEquals(excellent0, usedParams.get("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 null, excellent1, null
+		map.put("excellent", Arrays.asList(null, excellent1, null));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 none, excellent1, none
+		map.put("excellent", MapUtils.newHashMap("1", excellent1));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 null, null, excellent2
+		map.put("excellent", Arrays.asList(null, null, excellent2));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 none, none, excellent2
+		map.put("excellent", MapUtils.newHashMap("2", excellent1));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
+		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
+
+		// 三个参数的动态片段的三个参数分别为 null, null, null
+		map.put("excellent", Arrays.asList(null, null, null));
+		namedScript = DSLUtils.parse(context, dsl, params);
+		// 测试解析脚本正确性
+		Assertions.assertEquals(readString("expected4.dsl"), namedScript.getScript());
+		// 测试解析参数正确性
+		usedParams = namedScript.getParams();
+		commonAsserts(enabled, state, beginDate, endDate, positions, regex, limit, expectedAfterWrap, staffId, array0,
+				noteq, notgt, notgte, notlt, notlte, usedParams);
+		Assertions.assertFalse(usedParams.containsKey("map.excellent[0]"));
 		Assertions.assertFalse(usedParams.containsKey("map[excellent][1]"));
 		Assertions.assertFalse(usedParams.containsKey("map.excellent[2]"));
 
