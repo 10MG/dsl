@@ -64,10 +64,8 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
 	 * 
-	 * @param dsl
-	 *            源DSL脚本
-	 * @param params
-	 *            查询参数列表
+	 * @param dsl    源DSL脚本
+	 * @param params 查询参数列表
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(String dsl, Object... params) {
@@ -77,10 +75,8 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除前缀和后缀（默认以“#[”作为前缀，以“]”作为后缀。），否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
 	 * 
-	 * @param dsl
-	 *            源DSL脚本
-	 * @param params
-	 *            参数查找表
+	 * @param dsl    源DSL脚本
+	 * @param params 参数查找表
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(String dsl, Object params) {
@@ -90,12 +86,9 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。动态脚本的动态片段以“#[”作为前缀，以“]”作为后缀。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除“#[”前缀和后缀“]”，否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
 	 * 
-	 * @param context
-	 *            上下文
-	 * @param dsl
-	 *            源DSL脚本
-	 * @param params
-	 *            查询参数列表
+	 * @param context 上下文
+	 * @param dsl     源DSL脚本
+	 * @param params  查询参数列表
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(DSLContext context, String dsl, Object... params) {
@@ -118,12 +111,9 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的源动态脚本语言（DSL）及参数转换为NamedScript对象。NamedScript对象含有带命名参数的脚本（script），及实际使用的参数查找表（params）。转换的过程中含有有效参数（参数值非null）的动态片段将被保留并去除前缀和后缀（默认以“#[”作为前缀，以“]”作为后缀。），否则动态片段将被去除。另外，使用单引号“''”包裹的字符串将被完整保留
 	 * 
-	 * @param context
-	 *            上下文
-	 * @param dsl
-	 *            源DSL脚本
-	 * @param params
-	 *            参数查找表
+	 * @param context 上下文
+	 * @param dsl     源DSL脚本
+	 * @param params  参数查找表
 	 * @return 返回NamedScript对象
 	 */
 	public static NamedScript parse(DSLContext context, String dsl, Object params) {
@@ -152,7 +142,7 @@ public abstract class DSLUtils {
 				isEmbed = false, // 是否在嵌入参数区域
 				notParamAccessor = true; // 不在参数访问符“[]”内
 		StringBuilder scriptBuilder = new StringBuilder(), paramNameBuilder = new StringBuilder(), dslfBuilder;
-		HashMap<Integer, Boolean> inValidParams = new HashMap<Integer, Boolean>();
+		HashSet<Integer> containsInValidParams = new HashSet<Integer>();
 		HashMap<Integer, Map<String, Object>> validParams = new HashMap<Integer, Map<String, Object>>(),
 				embedParams = new HashMap<Integer, Map<String, Object>>();
 		HashMap<Integer, StringBuilder> dslfBuilders = new HashMap<Integer, StringBuilder>();
@@ -176,16 +166,18 @@ public abstract class DSLUtils {
 			} else if (isSinglelineComment) {// 单行注释内
 				if (isDynamic && isDynamicEnd(c) && notParamAccessor) {// 当前字符为动态脚本结束字符
 					isSinglelineComment = false;
-					if (inValidParams.get(deep) == null) {// 不含无效参数
-						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								inValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
-							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
-							break;
+					if (containsInValidParams.contains(deep)) {// 含无效参数
+						if (deep > 0) {
+							if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+									containsInValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+								deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+								break;
+							}
+							deep--;
 						}
-						deep--;
-					} else if (deep > 0) {
+					} else {// 不含无效参数
 						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								inValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+								containsInValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
 							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 							break;
 						}
@@ -246,7 +238,7 @@ public abstract class DSLUtils {
 							validParams.get(deep).put(paramName, value);
 							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
-							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
+							containsInValidParams.add(deep);// 含有无效参数标记
 						}
 					} else if (isEmbed) {
 						isEmbed = false;// 结束动态嵌入参数区域
@@ -256,19 +248,21 @@ public abstract class DSLUtils {
 							embedParams.get(deep).put(paramName, value);
 							paramNameBuilder.setLength(0);
 						} else if (deep > 0) {
-							inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
+							containsInValidParams.add(deep);// 含有无效参数标记
 						}
 					}
-					if (inValidParams.get(deep) == null) {// 不含无效参数
-						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								inValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
-							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
-							break;
+					if (containsInValidParams.contains(deep)) {// 含无效参数
+						if (deep > 0) {
+							if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
+									containsInValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+								deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
+								break;
+							}
+							deep--;
 						}
-						deep--;
-					} else if (deep > 0) {
+					} else {
 						if (processDSL(context, scriptBuilder, dslfBuilders, params, paramGetter, usedParams,
-								inValidParams, validParams, embedParams, contexts, deep, true)) {// DSL片段解析为主脚本
+								containsInValidParams, validParams, embedParams, contexts, deep, false)) {// DSL片段解析为主脚本
 							deleteRedundantBlank(scriptBuilder);// 删除多余空白字符
 							break;
 						}
@@ -302,7 +296,7 @@ public abstract class DSLUtils {
 							if (value != null) {
 								validParams.get(deep).put(paramName, value);
 							} else if (deep >= 0) {
-								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
+								containsInValidParams.add(deep);// 含有无效参数标记
 							}
 							paramNameBuilder.setLength(0);
 
@@ -343,7 +337,7 @@ public abstract class DSLUtils {
 							if (value != null) {
 								embedParams.get(deep).put(paramName, value);
 							} else if (deep >= 0) {
-								inValidParams.put(deep, Boolean.TRUE);// 含有无效参数标记
+								containsInValidParams.add(deep);// 含有无效参数标记
 							}
 							paramNameBuilder.setLength(0);
 
@@ -457,10 +451,8 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的含有命名参数的脚本及其参数对照表转换为可执行的脚本对象（含可执行脚本及对应的参数列表）
 	 * 
-	 * @param namedScript
-	 *            使用命名参数的脚本对象模型
-	 * @param parser
-	 *            参数解析器
+	 * @param namedScript 使用命名参数的脚本对象模型
+	 * @param parser      参数解析器
 	 * @return 返回可执行的脚本对象
 	 */
 	public static <T> Script<T> toScript(NamedScript namedScript, ParamsParser<T> parser) {
@@ -470,12 +462,9 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定的含有命名参数的脚本及其参数对照表转换为可执行的脚本对象（含可执行脚本及对应的参数列表）
 	 * 
-	 * @param namedscript
-	 *            含有命名参数的脚本
-	 * @param params
-	 *            查询对照表
-	 * @param parser
-	 *            参数解析器
+	 * @param namedscript 含有命名参数的脚本
+	 * @param params      查询对照表
+	 * @param parser      参数解析器
 	 * @return 返回可执行的脚本对象
 	 */
 	public static <T> Script<T> toScript(String namedscript, Map<String, ?> params, ParamsParser<T> parser) {
@@ -570,12 +559,9 @@ public abstract class DSLUtils {
 	/**
 	 * 获取含命名参数的脚本中使用的参数集
 	 * 
-	 * @param paramGetter
-	 *            参数获取器
-	 * @param namedscript
-	 *            含命名参数的脚本
-	 * @param params
-	 *            参数集
+	 * @param paramGetter 参数获取器
+	 * @param namedscript 含命名参数的脚本
+	 * @param params      参数集
 	 * @return 含命名参数的脚本中使用的参数集
 	 */
 	public static Map<String, Object> getUsedParams(ParamGetter paramGetter, CharSequence namedscript, Object params) {
@@ -680,12 +666,9 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定的三个前后相邻字符b和c，判断其是否为命名参数脚本参数的开始位置
 	 * 
-	 * @param a
-	 *            前第二个字符
-	 * @param b
-	 *            前第一个字符
-	 * @param c
-	 *            当前字符
+	 * @param a 前第二个字符
+	 * @param b 前第一个字符
+	 * @param c 当前字符
 	 * @return 如果字符a不为“:”、字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
 	 */
 	public static boolean isParamBegin(char a, char b, char c) {
@@ -695,12 +678,9 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定的三个前后相邻字符b和c，判断其是否为嵌入参数脚本参数的开始位置
 	 * 
-	 * @param a
-	 *            前第二个字符
-	 * @param b
-	 *            前第一个字符
-	 * @param c
-	 *            当前字符
+	 * @param a 前第二个字符
+	 * @param b 前第一个字符
+	 * @param c 当前字符
 	 * @return 如果字符a不为“:”、字符b为“:”且字符c为26个英文字母（大小写均可）则返回true，否则返回false
 	 */
 	public static boolean isEmbedBegin(char a, char b, char c) {
@@ -710,8 +690,7 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定的字符c，判断是否是参数字符（即大小写字母、数字、英文句号、方括号、下划线）
 	 * 
-	 * @param c
-	 *            指定字符
+	 * @param c 指定字符
 	 * @return 如果字符c为26个字母（大小写均可）、“0-9”、“.”、“[”、“]”或者“_”，返回 {@code true}，否则返回
 	 *         {@code false}
 	 */
@@ -723,14 +702,10 @@ public abstract class DSLUtils {
 	 * 
 	 * 根据指定的三个前后相邻字符a、b和c及当前字符c之前的连续反斜杠数量，判断其是否为命名参数脚本字符串区的结束位置
 	 * 
-	 * @param a
-	 *            前第二个字符a
-	 * @param b
-	 *            前一个字符b
-	 * @param c
-	 *            当前字符c
-	 * @param backslashes
-	 *            当前字符c之前的连续反斜杠数量
+	 * @param a           前第二个字符a
+	 * @param b           前一个字符b
+	 * @param c           当前字符c
+	 * @param backslashes 当前字符c之前的连续反斜杠数量
 	 * @return 是动态脚本字符串区域结束位置返回true，否则返回false
 	 */
 	public static boolean isStringEnd(char a, char b, char c, int backslashes) {
@@ -748,10 +723,8 @@ public abstract class DSLUtils {
 	/**
 	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的单行注释的开始位置
 	 * 
-	 * @param b
-	 *            前一字符
-	 * @param c
-	 *            当前字符
+	 * @param b 前一字符
+	 * @param c 当前字符
 	 * @return 如果当前为脚本的单行注释的开始位置，则返回 {@code true}，否则返回 {@code false}
 	 */
 	public static boolean isSinglelineCommentBegin(char b, char c) {
@@ -773,10 +746,8 @@ public abstract class DSLUtils {
 	/**
 	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的多行注释的开始位置
 	 * 
-	 * @param b
-	 *            前一字符
-	 * @param c
-	 *            当前字符
+	 * @param b 前一字符
+	 * @param c 当前字符
 	 * @return 如果当前为脚本的多行注释的开始位置，则返回 {@code true}，否则返回 {@code false}
 	 */
 	public static boolean isMiltilineCommentBegin(char b, char c) {
@@ -798,10 +769,8 @@ public abstract class DSLUtils {
 	/**
 	 * 根据当前字符 {@code c} 和前一字符 {@code b} 判断当前是否处于脚本的多行注释的结束位置
 	 * 
-	 * @param b
-	 *            前一字符
-	 * @param c
-	 *            当前字符
+	 * @param b 前一字符
+	 * @param c 当前字符
 	 * @return 如果当前为脚本的多行注释的结束位置，则返回 {@code true}，否则返回 {@code false}
 	 */
 	public static boolean isMiltilineCommentEnd(char b, char c) {
@@ -823,10 +792,8 @@ public abstract class DSLUtils {
 	/**
 	 * 使用参数过转换器对参数表进行浅层转换。浅层转换是指，仅转换表层参数，但不会转换嵌在表层参数内部的属性。
 	 * 
-	 * @param paramsConverters
-	 *            参数转换器
-	 * @param params
-	 *            参数集
+	 * @param paramsConverters 参数转换器
+	 * @param params           参数集
 	 */
 	@SuppressWarnings("unchecked")
 	public static void convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> params) {
@@ -844,10 +811,8 @@ public abstract class DSLUtils {
 	/**
 	 * 使用参数过滤器对参数表进行浅层过滤。浅层过滤是指，仅过滤表层参数，但不会过滤嵌在表层参数内部的属性。
 	 * 
-	 * @param paramsFilters
-	 *            参数过滤器
-	 * @param params
-	 *            参数表
+	 * @param paramsFilters 参数过滤器
+	 * @param params        参数表
 	 */
 	@SuppressWarnings("unchecked")
 	public static void filter(List<ParamsFilter> paramsFilters, Map<String, Object> params) {
@@ -870,8 +835,7 @@ public abstract class DSLUtils {
 	/**
 	 * 删除前面的空白行
 	 * 
-	 * @param dsl
-	 *            动态脚本语言
+	 * @param dsl 动态脚本语言
 	 */
 	private static String deleteStartBlankLines(String dsl) {
 		int lastLineTailIndex = -1;
@@ -894,38 +858,30 @@ public abstract class DSLUtils {
 	/**
 	 * 处理DSL片段
 	 * 
-	 * @param params
-	 *            查询参数
-	 * @param paramGetter
-	 *            参数获取器
-	 * @param scriptBuilder
-	 *            目标脚本字符串构建器
-	 * @param dslfBuilders
-	 *            DSL片段（带深度）缓存表
-	 * @param usedParams
-	 *            使用到的参数
-	 * @param inValidParams
-	 *            含有无效参数标记
-	 * @param validParams
-	 *            有效参数表
-	 * @param embedParams
-	 *            嵌入参数表
-	 * @param globalContext
-	 *            全局上下文
-	 * @param attributesMap
-	 *            各层级属性表。各层属性表由当本层已运行的宏所存储，供本层后续执行的宏使用
-	 * @param deep
-	 *            当前动态脚本深度
-	 * @param emptyWhenNoMacro
-	 *            DSL片段没有宏时目标脚本是否为空白字符串
+	 * @param context               上下文
+	 * @param scriptBuilder         脚本字符串构建器
+	 * @param dslfBuilders          各级DSL片段构建器
+	 * @param params                查询参数
+	 * @param paramGetter           参数获取器
+	 * @param usedParams            使用到的参数
+	 * @param containsInValidParams 否含有无效参数的DSL层级
+	 * @param validParamses         各级有效参数表
+	 * @param embedParams           嵌入参数表
+	 * @param attributesMap         各层级属性表。各层属性表由当本层已运行的宏所存储，供本层后续执行的宏使用
+	 * @param deep                  当前动态脚本级数
+	 * @param emptyWhenNoMacro      DSL片段没有宏时目标脚本是否为空白字符串
 	 */
 	private static final boolean processDSL(DSLContext context, StringBuilder scriptBuilder,
 			HashMap<Integer, StringBuilder> dslfBuilders, Object params, ParamGetter paramGetter,
-			Map<String, Object> usedParams, HashMap<Integer, Boolean> inValidParams,
+			Map<String, Object> usedParams, Set<Integer> containsInValidParams,
 			HashMap<Integer, Map<String, Object>> validParamses, HashMap<Integer, Map<String, Object>> embedParams,
 			HashMap<Integer, Map<String, Object>> attributesMap, int deep, boolean emptyWhenNoMacro) {
 		Map<String, Object> validParams = validParamses.get(deep);
-		usedParams.putAll(validParams);
+		if (containsInValidParams.contains(deep)) {
+			containsInValidParams.remove(deep);
+		} else {
+			usedParams.putAll(validParams);
+		}
 		Map<String, Object> attributes = attributesMap.get(deep);
 		if (attributes == null) {
 			attributes = new HashMap<String, Object>();
@@ -940,7 +896,6 @@ public abstract class DSLUtils {
 		}
 		dslfBuilders.remove(deep);
 		validParamses.remove(deep);
-		inValidParams.remove(deep);
 		return dslfAsScript;
 	}
 
@@ -968,10 +923,8 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定的两个前后相邻字符b和c，判断其是否为动态脚本区的开始位置
 	 * 
-	 * @param b
-	 *            前一个字符b
-	 * @param c
-	 *            当前字符c
+	 * @param b 前一个字符b
+	 * @param c 当前字符c
 	 * @return
 	 */
 	private static boolean isDynamicBegin(char b, char c) {
@@ -981,8 +934,7 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定字符c，判断其是否为动态脚本区的结束位置
 	 * 
-	 * @param c
-	 *            指定字符
+	 * @param c 指定字符
 	 * @return
 	 */
 	private static boolean isDynamicEnd(char c) {
@@ -992,8 +944,7 @@ public abstract class DSLUtils {
 	/**
 	 * 删除将指定字符串缓冲区末尾多余的空白字符（包括回车符、换行符、制表符、空格）
 	 * 
-	 * @param sb
-	 *            指定字符串缓冲区
+	 * @param sb 指定字符串缓冲区
 	 */
 	private static void deleteRedundantBlank(StringBuilder sb) {
 		for (int len = sb.length(), i = len - 1; i >= 0; i--) {
@@ -1009,8 +960,7 @@ public abstract class DSLUtils {
 	/**
 	 * 根据指定的字符c，判断是否是26个字母（大小写均可）
 	 * 
-	 * @param c
-	 *            指定字符
+	 * @param c 指定字符
 	 * @return 是26个字母返回true，否则返回false
 	 */
 	private static boolean is26LettersIgnoreCase(char c) {
@@ -1020,12 +970,9 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定参数进行转换
 	 * 
-	 * @param paramsConverters
-	 *            参数转换器
-	 * @param paramName
-	 *            参数名
-	 * @param value
-	 *            参数值
+	 * @param paramsConverters 参数转换器
+	 * @param paramName        参数名
+	 * @param value            参数值
 	 * @return 转换后的参数值
 	 */
 	private static Object convert(List<ParamsConverter<?>> paramsConverters, String paramName, Object value) {
@@ -1042,14 +989,10 @@ public abstract class DSLUtils {
 	/**
 	 * 将指定参数进行转换
 	 * 
-	 * @param paramsConverters
-	 *            参数转换器
-	 * @param convertedParams
-	 *            已转换参数集
-	 * @param paramName
-	 *            参数名
-	 * @param value
-	 *            参数值
+	 * @param paramsConverters 参数转换器
+	 * @param convertedParams  已转换参数集
+	 * @param paramName        参数名
+	 * @param value            参数值
 	 * @return 转换后的参数值
 	 */
 	private static Object convert(List<ParamsConverter<?>> paramsConverters, Map<String, Object> convertedParams,
@@ -1062,14 +1005,10 @@ public abstract class DSLUtils {
 	/**
 	 * 确定参数是否需要过滤掉
 	 * 
-	 * @param paramsFilters
-	 *            参数过滤器
-	 * @param filteredParams
-	 *            已过滤参数
-	 * @param paramName
-	 *            参数名
-	 * @param value
-	 *            参数值
+	 * @param paramsFilters  参数过滤器
+	 * @param filteredParams 已过滤参数
+	 * @param paramName      参数名
+	 * @param value          参数值
 	 * @return 如果该参数需要被过滤掉则返回{@code true}，否则返回{@code false}
 	 */
 	private static boolean filtered(List<ParamsFilter> paramsFilters, Set<String> filteredParams, String paramName,
@@ -1252,10 +1191,8 @@ public abstract class DSLUtils {
 		/**
 		 * 获取参数值
 		 * 
-		 * @param params
-		 *            参数集
-		 * @param paramName
-		 *            参数名称
+		 * @param params    参数集
+		 * @param paramName 参数名称
 		 * @return 参数值
 		 */
 		Object getValue(Object params, String paramName);
