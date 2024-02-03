@@ -13,15 +13,17 @@ WHERE enabled = :enabled
   #[AND STAFF_NAME LIKE :staffName]
   #[AND STAFF_ID = :staff.staffId]
   #[AND STAFF_ID = :map.staffId]
-  #[if(:map['staffName']!=null&&:staffName!=null) AND STAFF_NAME = :map[staffName]-- 单行注释]
-  #[AND STAFF_ID = :array[0]]
-  #[:null]
-  #[:emptyString]
+  #[if(:map['staffName']!=null&&:staffName!=null)AND STAFF_NAME = :map[staffName]-- 单行注释]
+  #[AND STAFF_ID = :array[0]/*多行
+  注释*/]
+  #[:null-- 会消失的单行注释]
+  #[:emptyString/*会消失的多行
+  注释*/]
   #[:blankSpace]
   #[:eq]
   #[AND 0 != :noteq]
-  /*多行
-        注释*/
+  /*永远出现的
+  多行注释*/
   #[:gt]
   #[AND 0 <= :notgt]
   #[:gte]
