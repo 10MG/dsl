@@ -42,7 +42,7 @@ public abstract class DSLUtils {
 		DYNAMIC_SUFFIX = ConfigUtils.getProperty("dynamic.suffix", "]").charAt(0);
 		PARAM_PREFIX = ConfigUtils.getProperty("param.prefix", ":").charAt(0);
 		EMBED_PREFIX = ConfigUtils.getProperty("embed.prefix", "#").charAt(0);
-		String[] singlelineCommentPrefixes = ConfigUtils.getProperty("comment.singleline", "--").split(","),
+		String[] singlelineCommentPrefixes = ConfigUtils.getProperty("comment.singleline", "--,//").split(","),
 				miltilineComments = ConfigUtils.getProperty("comment.multiline", "/*,*/").split(";");
 		SINGLELINE_COMMENT_PREFIXES = new char[singlelineCommentPrefixes.length][];
 		MILTILINE_COMMENT_PREFIXES = new char[miltilineComments.length][];
