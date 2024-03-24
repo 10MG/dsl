@@ -38,7 +38,9 @@ public class JDBCParamsParser implements ParamsParser<List<Object>> {
 	public void parse(StringBuilder scriptBuilder, Map<String, ?> params, String paramName, List<Object> targetParams) {
 		scriptBuilder.append(DSLUtils.PARAM_MARK);
 		Object value = params.get(paramName);
-		if (value != null) {
+		if (value == null) {
+			targetParams.add(value);
+		} else {
 			if (value instanceof Collection<?>) {
 				Collection<?> c = (Collection<?>) value;
 				if (CollectionUtils.isEmpty(c)) {
@@ -65,8 +67,6 @@ public class JDBCParamsParser implements ParamsParser<List<Object>> {
 			} else {
 				targetParams.add(value);
 			}
-		} else {
-			targetParams.add(value);
 		}
 	}
 

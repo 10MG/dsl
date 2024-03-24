@@ -30,7 +30,7 @@ public class SplitParamsConverter extends AbstractParamsConverter<Object> {
 
 	@Override
 	public Object convert(Object value) {
-		if (value != null && value instanceof String) {
+		if (value instanceof String) {
 			if (limit == null) {
 				return ((String) value).split(regex);
 			}

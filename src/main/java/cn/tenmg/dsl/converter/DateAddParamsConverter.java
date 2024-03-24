@@ -43,7 +43,7 @@ public class DateAddParamsConverter extends AbstractParamsConverter<Object> {
 
 	@Override
 	public Object convert(Object value) {
-		if (value != null && value instanceof Date) {
+		if (value instanceof Date) {
 			Integer field = fields.get(unit);
 			if (field != null) {
 				return DateUtils.add((Date) value, field, amount);

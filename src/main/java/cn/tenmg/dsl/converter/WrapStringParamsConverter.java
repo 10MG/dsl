@@ -14,7 +14,7 @@ public class WrapStringParamsConverter extends FormatableParamsConverter<Object>
 	@Override
 	public Object convert(Object value) {
 		String formatter = getFormatter();
-		if (value != null && formatter != null && value instanceof String) {
+		if (formatter != null && value instanceof String) {
 			return formatter.replaceAll(VALUE_REGEX, (String) value);
 		}
 		return value;
