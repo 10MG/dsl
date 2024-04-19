@@ -62,8 +62,7 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 	/**
 	 * 将字符串“null”插入脚本替换脚本中的参数
 	 * 
-	 * @param scriptBuilder
-	 *            脚本构建器
+	 * @param scriptBuilder 脚本构建器
 	 */
 	private static final void appendNull(StringBuilder scriptBuilder) {
 		scriptBuilder.append("null");
@@ -72,10 +71,8 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 	/**
 	 * 将字符串插入脚本替换脚本中的参数
 	 * 
-	 * @param scriptBuilder
-	 *            脚本构建器
-	 * @param value
-	 *            字符串参数值
+	 * @param scriptBuilder 脚本构建器
+	 * @param value         字符串参数值
 	 */
 	private static final void appendString(StringBuilder scriptBuilder, String value) {
 		scriptBuilder.append(SINGLE_QUOTATION_MARK)
@@ -86,10 +83,8 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 	/**
 	 * 将对象转换为字符串插入脚本替换脚本中的参数
 	 * 
-	 * @param scriptBuilder
-	 *            脚本构建器
-	 * @param value
-	 *            参数值
+	 * @param scriptBuilder 脚本构建器
+	 * @param value         参数值
 	 */
 	private void append(StringBuilder scriptBuilder, Object value) {
 		if (value == null) {
@@ -98,6 +93,8 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 			appendString(scriptBuilder, (String) value);
 		} else if (value instanceof CharSequence || value instanceof Character || value instanceof char[]) {
 			appendString(scriptBuilder, value.toString());
+		} else if (value instanceof Number || value instanceof Boolean) {
+			scriptBuilder.append(value);
 		} else {
 			scriptBuilder.append(convert(value));
 		}
@@ -106,8 +103,7 @@ public abstract class PlaintextParamsParser implements ParamsParser<Void> {
 	/**
 	 * 将参数值转换为字符串
 	 * 
-	 * @param value
-	 *            参数值，不为<code>null</code>，且非<code>java.lang.String</code>、<code>java.lang.CharSequence</code>、<code>java.lang.Character</code>、<code>char[]</code>类型
+	 * @param value 参数值，不为<code>null</code>，且非<code>java.lang.String</code>、<code>java.lang.CharSequence</code>、<code>java.lang.Character</code>、<code>char[]</code>类型
 	 * @return 返回参数值的字符串表示
 	 */
 	protected abstract String convert(Object value);
