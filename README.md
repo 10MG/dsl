@@ -11,6 +11,9 @@
     </a>
         <img alt="maven" src="https://img.shields.io/maven-central/v/cn.tenmg/dsl.svg?style=flat-square">
     </a>
+    <a target="_blank" href="https://jq.qq.com/?_wv=1027&k=wOOIp0CR">
+        <img src="https://img.shields.io/badge/QQ群-531812227-blue">
+    </a>
 </p>
 
 ## 简介
