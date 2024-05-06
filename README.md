@@ -9,6 +9,7 @@
     <a target="_blank" href='https://gitee.com/tenmg/dsl'>
         <img src="https://gitee.com/tenmg/dsl/badge/star.svg?theme=white" />
     </a>
+    <a href="https://mvnrepository.com/artifact/cn.tenmg/dsl">
         <img alt="maven" src="https://img.shields.io/maven-central/v/cn.tenmg/dsl.svg?style=flat-square">
     </a>
     <a target="_blank" href="https://jq.qq.com/?_wv=1027&k=wOOIp0CR">
