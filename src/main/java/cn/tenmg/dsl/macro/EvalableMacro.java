@@ -5,7 +5,6 @@ import java.util.Map;
 import cn.tenmg.dsl.DSLContext;
 import cn.tenmg.dsl.EvalEngine;
 import cn.tenmg.dsl.Macro;
-import cn.tenmg.dsl.eval.JavaScriptEngine;
 import cn.tenmg.dsl.utils.ConfigUtils;
 import cn.tenmg.dsl.utils.DSLUtils;
 import cn.tenmg.dsl.utils.MapUtils;
@@ -26,7 +25,7 @@ public abstract class EvalableMacro implements Macro {
 		String className = ConfigUtils.getProperty("macro.eval-engine");
 		EvalEngine evalEngine;
 		if (StringUtils.isBlank(className)) {
-			evalEngine = new JavaScriptEngine();
+			evalEngine = new cn.tenmg.dsl.eval.JavaScriptEngine();
 		} else {
 			try {
 				evalEngine = (EvalEngine) Class.forName(className).getConstructor().newInstance();
