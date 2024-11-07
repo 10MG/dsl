@@ -107,6 +107,12 @@ public abstract class MacroUtils {
 								logic.append(c);
 							} else {
 								if (c == MACRO_LOGIC_END) {// 宏逻辑结束
+									if (isParam) {// 参数放在后面，宏逻辑随着参数名结束而结束
+										isParam = false;
+										paramName = paramNameBuilder.toString();
+										usedParams.put(paramName, params.get(paramName));
+									}
+
 									if (deep == 0) {
 										if (logic.length() > 0) {
 											try {
