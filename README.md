@@ -545,7 +545,7 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
 
 ## 使用说明
 
-以基于Maven项目为例
+以 Maven 项目为例
 
 1. pom.xml 添加依赖，${dsl.version} 为版本号，可定义属性或直接使用版本号替换：
 
@@ -578,6 +578,13 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
 	<artifactId>bsh</artifactId>
 	<version>2.0b6</version>
 </dependency>
+```
+
+使用 Beanshell 引擎还需要在 `classpath` 下（Maven）添加 `dsl.properties` 配置文件，配置内容如下：
+
+```
+# 启用基于 Beanshell 的宏实现
+macro.eval-engine=cn.tenmg.dsl.eval.BeanshellEngine
 ```
 
 2. 调用 `DSLUtils.parse` 方法，传入动态脚本和参数执行解析：
@@ -617,7 +624,7 @@ List<Object> params = script.getParams();
 
 ```
 // 或者，也可以直接转换为明文以供后续执行。
-sql = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
+String script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
 
 	@Override
 	protected String convert(Object value) {
