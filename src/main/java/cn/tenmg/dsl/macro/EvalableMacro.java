@@ -31,7 +31,7 @@ public abstract class EvalableMacro implements Macro {
 			try {
 				evalEngine = (EvalEngine) Class.forName(className).getConstructor().newInstance();
 			} catch (Exception e) {
-				throw new RuntimeException(String.format("Cannot instantiated {} using default constructor", className),
+				throw new RuntimeException(String.format("Cannot instantiated %s using default constructor", className),
 						e);
 			}
 		}
