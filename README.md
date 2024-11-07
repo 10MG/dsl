@@ -580,7 +580,7 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
 </dependency>
 ```
 
-使用 Beanshell 引擎还需要在 `classpath` 下（Maven）添加 `dsl.properties` 配置文件，配置内容如下：
+使用 Beanshell 引擎还需要在 `classpath` 下（Maven 项目通常是 `resources` 目录）添加 `dsl.properties` 配置文件，配置内容如下：
 
 ```
 # 启用基于 Beanshell 的宏实现
