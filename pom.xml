@@ -8,7 +8,7 @@
 		sparktool）和 JDBC（如 sqltool）。</description>
 	<groupId>cn.tenmg</groupId>
 	<artifactId>dsl</artifactId>
-	<version>1.4.5</version>
+	<version>1.4.6</version>
 	<packaging>jar</packaging>
 
 	<name>dsl</name>
