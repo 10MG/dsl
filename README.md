@@ -21,6 +21,115 @@
 
 DSL 的全称是动态脚本语言（Dynamic Script Language），它是对脚本语言的一种扩展。DSL 使用`:`和参数名表示普通参数，使用`#`和参数名表示嵌入参数，并使用特殊字符`#[]`标记动态片段，当解析时，判断实际传入参数值是否为空（`null`）或不存在决定是否保留该动态片段，从而达到动态执行不同脚本目的。以此来避免程序员手动拼接繁杂的脚本，使得程序员能从繁杂的业务逻辑中解脱出来。此外，DSL 脚本支持宏，来增强脚本的动态逻辑处理能力。由于具有很强的动态处理能力，目前 DSL 最成功的应用领域是动态结构化查询语言（DSQL），包括 Flink SQL（如 [Clink](https://gitee.com/tenmg/clink)）、Spark SQL（如 [sparktool](https://gitee.com/tenmg/sparktool)）和 JDBC（如 [sqltool](https://gitee.com/tenmg/sqltool)）领域。
 
+## 使用说明
+
+以 Maven 项目为例
+
+1. pom.xml 添加依赖，${dsl.version} 为版本号，可定义属性或直接使用版本号替换：
+
+```
+<!-- https://mvnrepository.com/artifact/cn.tenmg/dsl -->
+<dependency>
+    <groupId>cn.tenmg</groupId>
+    <artifactId>dsl</artifactId>
+    <version>${dsl.version}</version>
+</dependency>
+```
+
+如果使用 OpenJDK，还需要引入 JavaScript 引擎的实现包，如 nashorn-core：
+
+```
+<!-- https://mvnrepository.com/artifact/org.openjdk.nashorn/nashorn-core -->
+<dependency>
+	<groupId>org.openjdk.nashorn</groupId>
+	<artifactId>nashorn-core</artifactId>
+	<version>15.0</version>
+</dependency>
+```
+
+如果所使用 JDK 不支持使用 JavaScript 引擎，可改为使用 Beanshell 引擎：
+
+```
+<!-- https://mvnrepository.com/artifact/org.apache-extras.beanshell/bsh -->
+<dependency>
+	<groupId>org.apache-extras.beanshell</groupId>
+	<artifactId>bsh</artifactId>
+	<version>2.0b6</version>
+</dependency>
+```
+
+使用 Beanshell 引擎还需要在 `classpath` 下（Maven 项目通常是 `resources` 目录）添加 `dsl.properties` 配置文件，配置内容如下：
+
+```
+# 启用基于 Beanshell 的宏实现
+macro.eval-engine=cn.tenmg.dsl.eval.BeanshellEngine
+```
+
+2. 调用 `DSLUtils.parse` 方法，传入动态脚本和参数执行解析：
+
+```
+// 解析后得到的 NamedScript 对象，含有命名参数（形如“:paramName”）以及参数对照表。
+NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_INFO S\r\n"
+	+ "WHERE #[if(:curDepartmentId == '01') 1=1 -- 添加恒等条件， 使得后面的动态条件可以统一，而不需要去除“AND”（注：这里是单行注释）]\r\n"
+	+ "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n"
+	+ "  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n"
+	+ "  /* 注释可以在动态片段内部，动态片段内部的注释会跟随动态片段保留而保留，去除而去除；\r\n"
+	+ "  注释也可以在动态片段外部，动态片段外部的注释会被完整保留在脚本中。\r\n"
+	+ "  单行注释的前缀、多行注释的前后缀都可以在dsl.properties配置文件中自定义，最多支持两个字符。\r\n"
+	+ "  对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。 */\r\n"
+	+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
+	+ "  #[AND S.STAFF_ID = :staffId]\r\n"
+	+ "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
+
+// 使用参数转换器和过滤器，可以对用户输入的内容进行类型转换、过滤等统一处理，如果需使用则需要传入 DSLContext 参数
+// NamedScript namedScript = DSLUtils.parse(new DefaultDSLContext(converters, filters), dsl, params);
+```
+
+3. 调用 `DSLUtils.toScript` 方法将含命名参数的脚本解析为实际可执行的脚本（和参数）。内置两种参数解析器：
+
+（1）使用 JDBC 参数解析器，解析为使用 `?` 作为占位符的脚本，并返回参数列表：
+
+```
+// NamedScript 对象配合参数解析器进一步转换，可得到实际可运行的脚本。例如，内置的 JDBCParamsParser 可以将脚本中参数解析为 “?” 占位符并得到参数列表。
+Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), JDBCParamsParser.getInstance());
+String sql = script.getValue();
+List<Object> params = script.getParams();
+// 接下来，可以使用 SQL 和参数执行 JDBC 了！
+// …
+```
+
+（2）使用明文参数解析器，解析为将参数代入后的可执行代码：
+
+```
+// 或者，也可以直接转换为明文以供后续执行。
+String script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
+
+	@Override
+	protected String convert(Object value) {
+		if (value instanceof Date) {
+			return parse((Date) value);
+		} else if (value instanceof Calendar) {
+			Date date = ((Calendar) value).getTime();
+			if (date == null) {
+				return "null";
+			} else {
+				return parse(date);
+			}
+		} else {
+			return value.toString();
+		}
+	}
+
+	private String parse(Date date) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+		return "'" + sdf.format(date) + "'";
+	}
+
+}).getValue();
+
+// 使用明文直接执行。
+// …
+```
 
 ## 动态片段
 
@@ -541,116 +650,6 @@ WHERE S.DEPARTMENT_ID = :curDepartmentId
   #[AND S.STATUS = :status]
   #[AND S.STAFF_ID = :staffId]
   #[AND S.STAFF_NAME LIKE :staffName]
-```
-
-## 使用说明
-
-以 Maven 项目为例
-
-1. pom.xml 添加依赖，${dsl.version} 为版本号，可定义属性或直接使用版本号替换：
-
-```
-<!-- https://mvnrepository.com/artifact/cn.tenmg/dsl -->
-<dependency>
-    <groupId>cn.tenmg</groupId>
-    <artifactId>dsl</artifactId>
-    <version>${dsl.version}</version>
-</dependency>
-```
-
-如果使用 OpenJDK，还需要引入 JavaScript 引擎的实现包，如 nashorn-core：
-
-```
-<!-- https://mvnrepository.com/artifact/org.openjdk.nashorn/nashorn-core -->
-<dependency>
-	<groupId>org.openjdk.nashorn</groupId>
-	<artifactId>nashorn-core</artifactId>
-	<version>15.0</version>
-</dependency>
-```
-
-如果所使用 JDK 不支持使用 JavaScript 引擎，可改为使用 Beanshell 引擎：
-
-```
-<!-- https://mvnrepository.com/artifact/org.apache-extras.beanshell/bsh -->
-<dependency>
-	<groupId>org.apache-extras.beanshell</groupId>
-	<artifactId>bsh</artifactId>
-	<version>2.0b6</version>
-</dependency>
-```
-
-使用 Beanshell 引擎还需要在 `classpath` 下（Maven 项目通常是 `resources` 目录）添加 `dsl.properties` 配置文件，配置内容如下：
-
-```
-# 启用基于 Beanshell 的宏实现
-macro.eval-engine=cn.tenmg.dsl.eval.BeanshellEngine
-```
-
-2. 调用 `DSLUtils.parse` 方法，传入动态脚本和参数执行解析：
-
-```
-// 解析后得到的 NamedScript 对象，含有命名参数（形如“:paramName”）以及参数对照表。
-NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_INFO S\r\n"
-	+ "WHERE #[if(:curDepartmentId == '01') 1=1 -- 添加恒等条件， 使得后面的动态条件可以统一，而不需要去除“AND”（注：这里是单行注释）]\r\n"
-	+ "  #[elseif(:curDepartmentId == '02' || :curDepartmentId == '03') S.DEPARTMENT_ID = :curDepartmentId]\r\n"
-	+ "  #[else S.DEPARTMENT_ID = :curDepartmentId AND S.POSITION = :curPosition]\r\n"
-	+ "  /* 注释可以在动态片段内部，动态片段内部的注释会跟随动态片段保留而保留，去除而去除；\r\n"
-	+ "  注释也可以在动态片段外部，动态片段外部的注释会被完整保留在脚本中。\r\n"
-	+ "  单行注释的前缀、多行注释的前后缀都可以在dsl.properties配置文件中自定义，最多支持两个字符。\r\n"
-	+ "  对于单行注释前缀和多行注释前缀，使用一个字符时，不能使用字符“#”；使用两个字符时，不能使用字符“#[”。 */\r\n"
-	+ "  对于多行注释后缀，第一个字符不能使用字符“]”。 */\r\n"
-	+ "  #[AND S.STAFF_ID = :staffId]\r\n"
-	+ "  #[AND S.STAFF_NAME LIKE :staffName]", "staffName", "June");
-
-// 使用参数转换器和过滤器，可以对用户输入的内容进行类型转换、过滤等统一处理，如果需使用则需要传入 DSLContext 参数
-// NamedScript namedScript = DSLUtils.parse(new DefaultDSLContext(converters, filters), dsl, params);
-```
-
-3. 调用 `DSLUtils.toScript` 方法将含命名参数的脚本解析为实际可执行的脚本（和参数）。内置两种参数解析器：
-
-（1）使用 JDBC 参数解析器，解析为使用 `?` 作为占位符的脚本，并返回参数列表：
-
-```
-// NamedScript 对象配合参数解析器进一步转换，可得到实际可运行的脚本。例如，内置的 JDBCParamsParser 可以将脚本中参数解析为 “?” 占位符并得到参数列表。
-Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), JDBCParamsParser.getInstance());
-String sql = script.getValue();
-List<Object> params = script.getParams();
-// 接下来，可以使用 SQL 和参数执行 JDBC 了！
-// …
-```
-
-（2）使用明文参数解析器，解析为将参数代入后的可执行代码：
-
-```
-// 或者，也可以直接转换为明文以供后续执行。
-String script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
-
-	@Override
-	protected String convert(Object value) {
-		if (value instanceof Date) {
-			return parse((Date) value);
-		} else if (value instanceof Calendar) {
-			Date date = ((Calendar) value).getTime();
-			if (date == null) {
-				return "null";
-			} else {
-				return parse(date);
-			}
-		} else {
-			return value.toString();
-		}
-	}
-
-	private String parse(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-		return "'" + sdf.format(date) + "'";
-	}
-
-}).getValue();
-
-// 使用明文直接执行。
-// …
 ```
 
 ## 参与贡献
