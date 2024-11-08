@@ -29,16 +29,14 @@ public class JavaScriptEngine implements EvalEngine {
 
 	private ThreadLocal<ScriptEngine> scriptEngineHolder = new ThreadLocal<ScriptEngine>();
 
-	static {
-		if (SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript") == null) {
+	@Override
+	public void open() {
+		ScriptEngine scriptEngine = SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
+		if (scriptEngine == null) {
 			throw new RuntimeException(
 					"Unable to find JavaScript engine, please import relevant components, such as nashorn-core");
 		}
-	}
-
-	@Override
-	public void open() {
-		scriptEngineHolder.set(SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript"));
+		scriptEngineHolder.set(scriptEngine);
 	}
 
 	@Override
