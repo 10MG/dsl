@@ -51,7 +51,6 @@ public abstract class MacroUtils {
 		}
 		try {
 			int suffixLen = CLASS_SUFFIX.length();
-			scanMacros("cn.tenmg.dsl.macro", suffixLen);
 			String scanPackages = ConfigUtils.getProperty(SCAN_PACKAGES_KEY);
 			if (scanPackages != null) {
 				String[] basePackages = scanPackages.split(",");

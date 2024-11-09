@@ -22,6 +22,7 @@ import java.util.jar.JarEntry;
  *
  */
 public abstract class FileUtils {
+
 	private static final String JAR = "jar";
 
 	private static final boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("windows");
@@ -32,13 +33,10 @@ public abstract class FileUtils {
 	/**
 	 * 递归扫描指定包及其子包下指定后缀名的文件
 	 * 
-	 * @param basePackage
-	 *            指定的包名
-	 * @param suffix
-	 *            指定的文件后缀名
+	 * @param basePackage 指定的包名
+	 * @param suffix      指定的文件后缀名
 	 * @return 扫描到的文件列表
-	 * @throws IOException
-	 *             I/O异常
+	 * @throws IOException I/O异常
 	 */
 	public static List<String> scanPackage(String basePackage, String suffix) throws IOException {
 		return scanPackage(ClassUtils.getDefaultClassLoader(), basePackage, suffix);
@@ -47,15 +45,11 @@ public abstract class FileUtils {
 	/**
 	 * 递归扫描指定包及其子包下指定后缀名的文件
 	 * 
-	 * @param classLoader
-	 *            类加载器
-	 * @param basePackage
-	 *            指定的包名
-	 * @param suffix
-	 *            指定的文件后缀名
+	 * @param classLoader 类加载器
+	 * @param basePackage 指定的包名
+	 * @param suffix      指定的文件后缀名
 	 * @return 扫描到的文件列表
-	 * @throws IOException
-	 *             I/O异常
+	 * @throws IOException I/O异常
 	 */
 	public static List<String> scanPackage(ClassLoader classLoader, String basePackage, String suffix)
 			throws IOException {
@@ -69,7 +63,7 @@ public abstract class FileUtils {
 					Enumeration<JarEntry> entries = ((JarURLConnection) url.openConnection()).getJarFile().entries();
 					while (entries.hasMoreElements()) {
 						String name = entries.nextElement().getName();
-						if (name.endsWith(suffix)) {
+						if (name.startsWith(basePackage) && name.endsWith(suffix)) {
 							fileNames.add(name);
 						}
 					}
