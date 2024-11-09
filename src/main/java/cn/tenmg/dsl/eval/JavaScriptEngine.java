@@ -29,14 +29,16 @@ public class JavaScriptEngine implements EvalEngine {
 
 	private ThreadLocal<ScriptEngine> scriptEngineHolder = new ThreadLocal<ScriptEngine>();
 
-	@Override
-	public void open() {
-		ScriptEngine scriptEngine = SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
-		if (scriptEngine == null) {
+	static {
+		if (getJavaScriptEngine() == null) {
 			throw new RuntimeException(
 					"Unable to find JavaScript engine, please import relevant components, such as nashorn-core");
 		}
-		scriptEngineHolder.set(scriptEngine);
+	}
+
+	@Override
+	public void open() {
+		scriptEngineHolder.set(getJavaScriptEngine());
 	}
 
 	@Override
@@ -157,6 +159,10 @@ public class JavaScriptEngine implements EvalEngine {
 			keys.add(new Key(keyBuilder.toString(), key, ""));
 		}
 		return keys.toArray(new Key[0]);
+	}
+
+	private static ScriptEngine getJavaScriptEngine() {
+		return SCRIPT_ENGINE_MANAGER.getEngineByName("JavaScript");
 	}
 
 	private static class Key {
