@@ -482,7 +482,7 @@ public interface Macro {
 
 1. 配置扫描的包
 
-在配置文件中，配置`scan.packages`指定扫描的包，如果不配置该值则默认仅扫描`cn.tenmg.dsl.macro`包。
+在配置文件中，配置 `scan.packages` 指定扫描的包名，dsl 将自动扫描并装配宏。
 
 ```
 scan.packages=mypackage
@@ -627,6 +627,7 @@ public interface EvalEngine {
 `comment.singleline`           |  `--,//` | 单行注释前缀，最多2个字符。
 `comment.multiline`            |  `/*,*/` | 多行注释前缀、后缀，前后缀之间使用“,”分隔，均最多支持2个字符。
 `macro.*`                      |          | 宏实现类配置。宏的配置也可Java原生服务加载模式或者使用注解扫描模式来配置，个性化的宏名称可以在注解上配置。
+`scan.packages`                |          | 自动扫描的宏实现类包名。
 `macro.eval-engine`            |          | 宏的逻辑代码执行引擎，缺省时等价于 `cn.tenmg.dsl.eval.JavaScriptEngine`。
 `filter.type-convert-exception`| `false`  | 过滤器进行比较前，将比较值转换为参数值的类型时，是否将引发的异常抛出。
 
