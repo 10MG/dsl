@@ -618,18 +618,18 @@ public interface EvalEngine {
 通过`dsl.properties`配置文件可以调整DSL的配置，各配置项如下：
 
 
-配置项                          | 默认值   | 说明
--------------------------------|----------|--------------------------------
-`dynamic.prefix`               |  `#[`    | 动态脚本片段前缀，仅支持2个字符。
-`dynamic.suffix`               |  `]`     | 动态脚本片段后缀，仅支持1个字符。
-`param.prefix`                 |  `:`     | 普通参数前缀，仅支持1个字符。
-`embed.prefix`                 |  `#`     | 嵌入参数前缀，仅支持1个字符。
-`comment.singleline`           |  `--,//` | 单行注释前缀，最多2个字符。
-`comment.multiline`            |  `/*,*/` | 多行注释前缀、后缀，前后缀之间使用“,”分隔，均最多支持2个字符。
-`macro.*`                      |          | 宏实现类配置。宏的配置也可Java原生服务加载模式或者使用注解扫描模式来配置，个性化的宏名称可以在注解上配置。
-`scan.packages`                |          | 自动扫描的宏实现类包名。
-`macro.eval-engine`            |          | 宏的逻辑代码执行引擎，缺省时等价于 `cn.tenmg.dsl.eval.JavaScriptEngine`。
-`filter.type-convert-exception`| `false`  | 过滤器进行比较前，将比较值转换为参数值的类型时，是否将引发的异常抛出。
+配置项                          |                默认值                | 说明
+-------------------------------|--------------------------------------|--------------------------------
+`dynamic.prefix`               |                 `#[`                 | 动态脚本片段前缀，仅支持2个字符。
+`dynamic.suffix`               |                  `]`                 | 动态脚本片段后缀，仅支持1个字符。
+`param.prefix`                 |                  `:`                 | 普通参数前缀，仅支持1个字符。
+`embed.prefix`                 |                  `#`                 | 嵌入参数前缀，仅支持1个字符。
+`comment.singleline`           |                `--,//`               | 单行注释前缀，最多2个字符。
+`comment.multiline`            |                `/*,*/`               | 多行注释前缀、后缀，前后缀之间使用“,”分隔，均最多支持2个字符。
+`macro.*`                      |                                      | 宏实现类配置。也可使用Java原生服务加载模式或者使用注解扫描模式来配置。
+`scan.packages`                |                                      | 自动扫描的宏实现类包名。
+`macro.eval-engine`            | `cn.tenmg.dsl.eval.JavaScriptEngine` | 宏的逻辑代码执行引擎。
+`filter.type-convert-exception`|               `false`                | 过滤器进行比较前，将比较值转换为参数值的类型时，是否将引发的异常抛出。
 
 如果用户想变更实际使用的配置文件，则需要在 `dsl-config-loader.properties` （1.2及以前版本为dsl-context-loader.properties）中给出配置文件相对classpath的具体位置，例如：
 
