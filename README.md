@@ -520,9 +520,9 @@ package mypackage;
 
 import java.util.Map;
 
-import cn.tenmg.dsl.annotion.Macro;
+import cn.tenmg.dsl.Macro;
 
-public class MyMacro implements cn.tenmg.dsl.Macro {
+public class MyMacro implements Macro {
 
 	@Override
 	boolean execute(DSLContext context, Map<String, Object> attributes, String logic, StringBuilder dslf,
