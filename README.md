@@ -94,8 +94,31 @@ NamedScript namedScript = DSLUtils.parse("SELECT\r\n" + "  *\r\n" + "FROM STAFF_
 Script<List<Object>> script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), JDBCParamsParser.getInstance());
 String sql = script.getValue();
 List<Object> params = script.getParams();
+
 // 接下来，可以使用 SQL 和参数执行 JDBC 了！
-// …
+Connection con = null;
+PreparedStatement ps = null;
+ResultSet rs = null;
+try {
+	con = dataSource.getConnection();
+	con.setReadOnly(true);
+	ps = con.prepareStatement(sql);
+        if (params != null && !params.isEmpty()) {
+		for (int i = 0, size = params.size(); i < size; i++) {
+			ps.setObject(i + 1, params.get(i));
+		}
+	}
+        rs = ps.executeQuery();
+        // ……
+
+        // 或者
+        // ps.execute();
+        // con.commit();
+} finally {
+	JDBCUtils.close(ps);
+	JDBCUtils.close(con);
+}
+
 ```
 
 （2）使用明文参数解析器，解析为将参数代入后的可执行代码：
