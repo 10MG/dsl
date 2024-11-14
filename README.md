@@ -100,23 +100,24 @@ Connection con = null;
 PreparedStatement ps = null;
 ResultSet rs = null;
 try {
-	con = dataSource.getConnection();
-	con.setReadOnly(true);
-	ps = con.prepareStatement(sql);
-        if (params != null && !params.isEmpty()) {
-		for (int i = 0, size = params.size(); i < size; i++) {
-			ps.setObject(i + 1, params.get(i));
-		}
-	}
-        rs = ps.executeQuery();
-        // ……
+    con = dataSource.getConnection();
+    con.setReadOnly(true);
+    ps = con.prepareStatement(sql);
+    if (params != null && !params.isEmpty()) {
+        for (int i = 0, size = params.size(); i < size; i++) {
+            ps.setObject(i + 1, params.get(i));
+        }
+    }
+    rs = ps.executeQuery();
+    // ……
 
-        // 或者
-        // ps.execute();
-        // con.commit();
+    // 或者
+    // ps.execute();
+    // con.commit();
 } finally {
-	JDBCUtils.close(ps);
-	JDBCUtils.close(con);
+    JDBCUtils.close(rs);
+    JDBCUtils.close(ps);
+    JDBCUtils.close(con);
 }
 
 ```
