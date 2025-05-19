@@ -147,7 +147,6 @@ String script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams
 	}
 
 	private String parse(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
 		return "'" + sdf.format(date) + "'";
 	}
 
