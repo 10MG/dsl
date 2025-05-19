@@ -128,6 +128,8 @@ try {
 // 或者，也可以直接转换为明文以供后续执行。
 String script = DSLUtils.toScript(namedScript.getScript(), namedScript.getParams(), new PlaintextParamsParser() {
 
+	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+
 	@Override
 	protected String convert(Object value) {
 		if (value instanceof Date) {
